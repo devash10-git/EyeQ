@@ -1,0 +1,35 @@
+{
+  "rows": [
+    {
+      "session": "anon/20260910T152728Z",
+      "n": 220,
+      "classical": 0.36363636363636365,
+      "with_qgaze": 0.34545454545454546,
+      "delta_pp": -1.8181818181818181
+    },
+    {
+      "session": "anon/20260912T063046Z",
+      "n": 220,
+      "classical": 0.29545454545454547,
+      "with_qgaze": 0.29545454545454547,
+      "delta_pp": 0.0
+    },
+    {
+      "session": "anon/20260913T142626Z",
+      "n": 220,
+      "classical": 0.14545454545454545,
+      "with_qgaze": 0.1409090909090909,
+      "delta_pp": -0.45454545454545453
+    }
+  ],
+  "pooled_classical": 0.2681818181818182,
+  "pooled_with_qgaze": 0.2606060606060606,
+  "pooled_delta_pp": -0.7575757575757576,
+  "flips_correct_to_wrong": 6,
+  "flips_wrong_to_correct": 1,
+  "channels_used": {
+    "geom": 660
+  },
+  "median_latency_ms": 69.21041700024944,
+  "sigma_px": 120.0
+}

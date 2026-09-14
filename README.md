@@ -160,9 +160,22 @@ on recorded human sessions, and removed:
 | Phase interference between language hypotheses | median **-0.03 pp** at matched prompt rate; 0 significant wins and 0 losses over 5 noise levels | not deployed; kept as `quantum/conditional_selection.py` |
 | Amplitude amplification on the consistency oracle | 0 rounds fire after conditioning; forced, dwell **2.63 -> 2.80 frames** and accuracy **98.4% -> 96.4%** | not deployed |
 | Quantum movement gate, on **recorded** kinematics | passes 98.9% of real frames; 3 win / 3 loss of 6 matched commit rates. On synthetic: **6/6 wins**, 7.30 -> 0.20 wrong per 100 | out of distribution on real data |
+| Quantum gaze->letter stack steering typing | **-0.8 pp** letter accuracy on 660 real fixations (26.8% -> 26.1%), 6 correct->wrong flips against 1 the other way, **68 ms** per commit | removed from the live path |
 | Retraining that gate on recorded kinematics | balanced accuracy **0.530** (chance 0.500), recall 0.088. Classical RBF **0.528**, logistic **0.529** — identical, and logistic is **10,000x faster** | kinematics do not predict reliability on clean fixations |
 
-The movement-gate result is the one to read first, because it is not a failure
+The gaze->letter removal is the clearest of these. The stack multiplied a third
+factor into every letter's score behind `ENABLE_QGAZE=1`. Enabled and measured
+against the classical decision on identical gaze evidence, it improved no
+session and cost 0.8 pp pooled. Two things made it harmful, and neither is a
+tuning problem: the endpoint returns only the **top-5** posterior, so every
+other letter was floored at 1e-3 and suppressed however confident the gaze was;
+and across 660 fixations the stack's own fusion reported
+`channels_used=['geom']` **100%** of the time. It discarded every quantum
+channel and returned the classical answer, having spent 68 ms per commit doing
+so. The endpoint remains for research; it no longer steers a keystroke.
+Reproduce with `python3 eval/qgaze_influence.py`.
+
+The movement-gate result is the next one to read, because it is not a failure
 of the method. Controlled against the only baseline that matters -- simply
 raising `THETA` until the keyboard asks just as often -- the gate wins **6 of 6**
 matched commit rates on synthetic kinematics, and by a wide margin (7.30 -> 0.20

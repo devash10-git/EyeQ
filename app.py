@@ -116,6 +116,8 @@ def movement(req: MovementRequest):
 
 
 # Quantum gaze->letter stack (quantum/gaze_letter.py). Same guarded pattern.
+# Loaded for two consumers: the graded reliability that /api/movement returns,
+# and the /api/gaze_letter research endpoint. It no longer steers typing.
 _gaze_stack = None
 _gaze_stack_error = "not loaded"
 if os.environ.get("DISABLE_QGAZE") != "1":
@@ -145,11 +147,18 @@ def gaze_letter(req: GazeLetterRequest):
 
     Runs all seven stages (QAOA-selected features -> QSVM region -> VQC slot,
     quantum-kernel prototype matching, QNN + Bayesian-network reliability,
-    QAOA consensus). Off the frame and dwell paths: the client calls this at
-    most once per commit and never blocks on the answer.
+    QAOA consensus).
 
-    Degrades safely: with no trained model the endpoint reports
-    ``available=False`` and the keyboard keeps its classical decision.
+    **Research surface only — the keyboard does not call this.** It used to,
+    behind ENABLE_QGAZE=1, multiplying this posterior into each letter's score.
+    Measured on 660 real recorded fixations that cost 0.7 pp of letter accuracy
+    (26.8% -> 26.1%), improved no session, and flipped six correct commits to
+    wrong against one the other way. Two causes: the top-5 truncation below
+    floors every other letter at 1e-3 regardless of what the gaze said, and
+    across 240 fixations the stack reported ``channels_used=['geom']`` 100% of
+    the time — its own fusion discarded every quantum channel and returned the
+    classical answer, for 68 ms per call. Reproduce with
+    ``eval/qgaze_influence.py``.
     """
     if _gaze_stack is None:
         return {"available": False, "reason": _gaze_stack_error}
@@ -230,14 +239,11 @@ def info():
         "num_clusters": NUM_CLUSTERS,
         "model_loaded": decoder.model is not None,
         "vocab_words": len(decoder.unigrams),
+        # The stack is loaded for the reliability signal that /api/movement
+        # returns; it no longer influences letter choice. ENABLE_QGAZE and the
+        # matching "gaze_letter_active" flag are gone — see the comment on the
+        # endpoint below for the measurement that removed them.
         "gaze_letter_loaded": _gaze_stack is not None,
-        # The stack ships trained on the synthetic forward model, so its region /
-        # slot / prototype channels are fitted to *that* geometry. Letting it
-        # steer a real user's keystrokes before it has been refitted on their own
-        # calibration would degrade typing, so influence is opt-in via
-        # ENABLE_QGAZE=1; the endpoint and its diagnostics run either way.
-        "gaze_letter_active": _gaze_stack is not None
-                              and os.environ.get("ENABLE_QGAZE") == "1",
     }
 
 

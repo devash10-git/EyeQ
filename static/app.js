@@ -63,8 +63,6 @@ const THETA = 0.80;          // commit only above this fused confidence
 const LM_BETA = 0.70;        // language-prior exponent (gaze stays in charge)
 const LM_FLOOR = 1e-4;       // minimum prior: the LM may advise, never veto
 const GATE_REFUSAL_LIMIT = 5; // consecutive refusals before the watchdog disables the gate
-const QGAZE_BETA = 0.5;      // quantum gaze-stack exponent (advisory, not a veto)
-const QGAZE_FLOOR = 1e-3;    // a letter outside its top-5 is unlikely, not banned
 
 const keyboard = document.getElementById("keyboard");
 const keys = [...document.querySelectorAll(".key")];
@@ -94,9 +92,6 @@ let gateDisabled = false;    // watchdog: the gate blocked everything, so it is 
 let movementBusy = false;    // one in-flight movement request at a time
 let wordEvidence = [];       // per letter of the current word: [[letter,p],...] top-2
 let qaoaLast = null;         // last /api/qaoa_word response (diagnostics/tests)
-let qgazeState = null;       // latest /api/gaze_letter posterior (quantum stack)
-let qgazeBusy = false;       // one in-flight gaze-letter request at a time
-let qgazeActive = false;     // server says the stack may influence typing
 let priorToken = 0;
 let sigmaOverride = null;    // test hook: force a gaze std-dev in px
 let lastFused = null;        // last fused posterior (diagnostics/tests)
@@ -299,16 +294,18 @@ function smartCommit(domKey, at) {
       // out-of-vocabulary word become impossible. LM_FLOOR keeps the language
       // model advisory — decisive on ambiguous gaze, overridable by a confident
       // one. Calibrated so a centred fixation still wins against a zero prior.
-      let score = c.pGaze * Math.pow(Math.max(raw, LM_FLOOR), LM_BETA);
-      // Quantum gaze channel: the stack's letter posterior enters as a third
-      // factor, exponent-damped like the language prior so it advises rather
-      // than overrides. Only active when the server says the stack is fitted
-      // for this user's geometry.
-      if (qgazeActive && qgazeState && qgazeState.available && c.letter) {
-        const hit = (qgazeState.posterior || []).find(e => e[0] === c.letter);
-        score *= Math.pow(Math.max(hit ? hit[1] : 0, QGAZE_FLOOR), QGAZE_BETA);
-      }
-      return { ...c, score };
+      /* The quantum gaze->letter stack used to enter here as a third factor,
+       * exponent-damped behind ENABLE_QGAZE=1. It was measured on 660 real
+       * recorded fixations and removed: pooled letter accuracy fell 26.8% ->
+       * 26.1%, it improved no session, and it flipped 6 correct commits to
+       * wrong against 1 the other way. Two things made it harmful. The endpoint
+       * returns only the top-5 posterior, so every other letter was floored at
+       * 1e-3 and suppressed no matter how confident the gaze; and across 240
+       * fixations the stack's own fusion reported channels_used=['geom'] 100%
+       * of the time -- it discarded every quantum channel and returned the
+       * classical answer, for 68 ms per commit. The endpoint still exists for
+       * research (quantum/gaze_letter.py); it no longer steers a keystroke. */
+      return { ...c, score: c.pGaze * Math.pow(Math.max(raw, LM_FLOOR), LM_BETA) };
     });
   if (!fused.length) { commit(domKey); return; }
   const z = fused.reduce((s, c) => s + c.score, 0);
@@ -951,39 +948,6 @@ setInterval(() => {
  * commit path. 250 ms is well inside the 693 ms dwell, so the verdict consulted
  * by smartCommit is always fresh relative to a keystroke. A failure leaves
  * movementState null and typing falls back to the local threshold rule. */
-/* Quantum gaze->letter stack (/api/gaze_letter).
- *
- * Polled on the same principle as the movement classifier: the request costs
- * tens of milliseconds, so it must never sit on the render or commit path.
- * 250 ms is well inside the 693 ms dwell, so whatever smartCommit reads is at
- * most one poll old. A failure leaves qgazeState null and the fused decision
- * proceeds exactly as before.
- *
- * Whether the answer may *influence* typing is the server's call
- * (info.gaze_letter_active, set by ENABLE_QGAZE=1). Off, this loop still runs
- * and records diagnostics, so the stack can be compared against the classical
- * decision on real gaze without risking a single keystroke. */
-setInterval(() => {
-  if (!tracker || mouseMode || qgazeBusy) return;
-  const g = tracker.gazeFeatures?.();
-  const m = tracker.movementFeatures?.();
-  if (!g || !m) return;
-  qgazeBusy = true;
-  fetch("/api/gaze_letter", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...g, ...m }),
-  })
-    .then(r => r.json())
-    .then(d => { qgazeState = d; })
-    .catch(() => { qgazeState = null; })
-    .finally(() => { qgazeBusy = false; });
-}, 250);
-
-fetch("/api/info").then(r => r.json())
-  .then(d => { qgazeActive = !!d.gaze_letter_active; })
-  .catch(() => {});
-
 setInterval(() => {
   if (!tracker || mouseMode || movementBusy) return;
   const f = tracker.movementFeatures?.();
@@ -1021,10 +985,7 @@ window.__gaze = {
   backspace: () => { applyBackspace(); },
   getEvidence: () => wordEvidence.map(p => p.slice()),
   qaoaLast: () => qaoaLast,
-  qgazeLast: () => qgazeState,
   setMovement: (state) => { movementState = state; },
-  qgazeActive: () => qgazeActive,
-  setQgaze: (state, active) => { qgazeState = state; qgazeActive = !!active; },
   // commit a letter with an explicit posterior (integration tests)
   applyLetterEv: (ch, ev) => applyLetter(ch, ev),
   // movement-gate hooks for automated testing
