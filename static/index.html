@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Eye Gaze Keyboard</title>
-  <link rel="stylesheet" href="/static/style.css?v=17">
+  <link rel="stylesheet" href="/static/style.css?v=15">
 </head>
 <body>
   <div id="banner"></div>
@@ -29,7 +29,6 @@
       <button class="link" id="clear-btn">Clear</button>
       <label class="link toggle"><input type="checkbox" id="mouse-mode"> Mouse mode</label>
       <label class="link toggle"><input type="checkbox" id="show-dot"> Show raw gaze dot</label>
-      <label class="link toggle"><input type="checkbox" id="letter-keys"> Letter keys (26 small targets)</label>
 
     </div>
 
@@ -52,63 +51,41 @@
   <div id="suggestions"></div>
 
   <main id="keyboard">
-    <!-- Cluster layout. Each key is a whole QWERTY region, so the target is
-         3x wider than a single key. Measured gaze error is 1.0-1.7x a letter
-         key but only 0.30-0.50x a cluster, which is why dwell can actually
-         commit here. The digits are the cluster codes from clusters.py. -->
-    <div id="kb-clusters">
-      <div class="krow">
-        <div class="key key-cluster" data-cluster="1"><span>QWE</span></div>
-        <div class="key key-cluster" data-cluster="2"><span>RTYU</span></div>
-        <div class="key key-cluster" data-cluster="3"><span>IOP</span></div>
-        <div class="key key-cluster" data-cluster="4"><span>ASD</span></div>
-      </div>
-      <div class="krow">
-        <div class="key key-cluster" data-cluster="5"><span>FGH</span></div>
-        <div class="key key-cluster" data-cluster="6"><span>JKL</span></div>
-        <div class="key key-cluster" data-cluster="7"><span>ZXCV</span></div>
-        <div class="key key-cluster" data-cluster="9"><span>BNM</span></div>
-      </div>
-    </div>
-
-    <div id="kb-letters" hidden>
-      <div class="krow">
-        <div class="key" data-letter="q"><span>Q</span></div>
-        <div class="key" data-letter="w"><span>W</span></div>
-        <div class="key" data-letter="e"><span>E</span></div>
-        <div class="key" data-letter="r"><span>R</span></div>
-        <div class="key" data-letter="t"><span>T</span></div>
-        <div class="key" data-letter="y"><span>Y</span></div>
-        <div class="key" data-letter="u"><span>U</span></div>
-        <div class="key" data-letter="i"><span>I</span></div>
-        <div class="key" data-letter="o"><span>O</span></div>
-        <div class="key" data-letter="p"><span>P</span></div>
+    <div class="krow">
+      <div class="key" data-letter="q"><span>Q</span></div>
+      <div class="key" data-letter="w"><span>W</span></div>
+      <div class="key" data-letter="e"><span>E</span></div>
+      <div class="key" data-letter="r"><span>R</span></div>
+      <div class="key" data-letter="t"><span>T</span></div>
+      <div class="key" data-letter="y"><span>Y</span></div>
+      <div class="key" data-letter="u"><span>U</span></div>
+      <div class="key" data-letter="i"><span>I</span></div>
+      <div class="key" data-letter="o"><span>O</span></div>
+      <div class="key" data-letter="p"><span>P</span></div>
     </div>
     <div class="krow">
-        <div class="key" data-letter="a"><span>A</span></div>
-        <div class="key" data-letter="s"><span>S</span></div>
-        <div class="key" data-letter="d"><span>D</span></div>
-        <div class="key" data-letter="f"><span>F</span></div>
-        <div class="key" data-letter="g"><span>G</span></div>
-        <div class="key" data-letter="h"><span>H</span></div>
-        <div class="key" data-letter="j"><span>J</span></div>
-        <div class="key" data-letter="k"><span>K</span></div>
-        <div class="key" data-letter="l"><span>L</span></div>
+      <div class="key" data-letter="a"><span>A</span></div>
+      <div class="key" data-letter="s"><span>S</span></div>
+      <div class="key" data-letter="d"><span>D</span></div>
+      <div class="key" data-letter="f"><span>F</span></div>
+      <div class="key" data-letter="g"><span>G</span></div>
+      <div class="key" data-letter="h"><span>H</span></div>
+      <div class="key" data-letter="j"><span>J</span></div>
+      <div class="key" data-letter="k"><span>K</span></div>
+      <div class="key" data-letter="l"><span>L</span></div>
     </div>
     <div class="krow">
-        <div class="key" data-letter="z"><span>Z</span></div>
-        <div class="key" data-letter="x"><span>X</span></div>
-        <div class="key" data-letter="c"><span>C</span></div>
-        <div class="key" data-letter="v"><span>V</span></div>
-        <div class="key" data-letter="b"><span>B</span></div>
-        <div class="key" data-letter="n"><span>N</span></div>
-        <div class="key" data-letter="m"><span>M</span></div>
+      <div class="key" data-letter="z"><span>Z</span></div>
+      <div class="key" data-letter="x"><span>X</span></div>
+      <div class="key" data-letter="c"><span>C</span></div>
+      <div class="key" data-letter="v"><span>V</span></div>
+      <div class="key" data-letter="b"><span>B</span></div>
+      <div class="key" data-letter="n"><span>N</span></div>
+      <div class="key" data-letter="m"><span>M</span></div>
     </div>
-    </div>
-
     <div class="krow krow-bottom">
       <div class="key key-space" data-action="space"><span>SPACE</span></div>
-      <div class="key key-back" data-action="backspace"><span>&#9003;</span></div>
+      <div class="key key-back" data-action="backspace"><span>⌫</span></div>
     </div>
   </main>
 
@@ -136,6 +113,6 @@
   </div>
 
   <script src="/static/iris-tracker.js?v=14" defer></script>
-  <script src="/static/app.js?v=25" defer></script>
+  <script src="/static/app.js?v=23" defer></script>
 </body>
 </html>

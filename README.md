@@ -144,41 +144,6 @@ of gaze imprecision.
 | `eval/gaze_bench.py` | Gaze-accuracy benchmark — px, degrees, key-pitch, by screen region |
 | `eval/test_gaze_bench.py` | Unit tests for the harness (synthetic fixtures, never accuracy) |
 
-## The keyboard ships the cluster layout
-
-Each key is a whole QWERTY region rather than one letter -- `QWE RTYU IOP ASD`
-over `FGH JKL ZXCV BNM`, the 9-cluster map from `clusters.py`. The reason is
-geometry. Measured on the recorded sessions, gaze error is **1.0-1.7x the width
-of a single letter key** (4.7 deg against 4.2, 3.4 against 3.4, 5.1 against
-3.1), so the fused posterior almost never clears `THETA` and dwelling on a
-letter produced choice chips instead of text. A cluster is ~3x wider, putting
-the error at 0.30-0.50x the target.
-
-At the *same* `THETA = 0.80`, on the same recorded sessions:
-
-| session | 26 letter keys | 4x2 clusters |
-|---|---|---|
-| 152728Z | 10.4% of fixations commit, 70.7% correct | **52% commit, 93% correct** |
-| 063046Z | 2.9%, 100% | **36%, 96%** |
-| 142626Z | 0.3%, 0% | **5%, 95%** |
-
-The grid shape is measured too: at the recorded sigma a 4x2 arrangement reaches
-a top posterior of 0.81, where 3x3 peaks at 0.70 and 2x4 at 0.58.
-
-Lowering `THETA` was tried first and rejected -- on the letter keyboard it
-raised typing to 43-63% but cut accuracy to 20-42%, and sweeping the target
-prompt rate from 0.25 to 0.90 left accuracy flat at 20-47% throughout. The
-threshold was refusing for a good reason; the target size was the problem.
-
-The cost is ambiguity: "hello" and "fellow" both gaze as `51663`. Words are
-therefore resolved at the space by `decoder.py`, whose consistency oracle
-guarantees the output re-encodes to exactly the clusters gazed. Measured on the
-16,839-word vocabulary, 9% of codes are ambiguous, covering 19% of words; the
-rest decode deterministically.
-
-The per-letter keyboard is still there behind the **Letter keys** toggle.
-End-to-end coverage is `tests/e2e/cluster_typing.js`.
-
 ## Tried and measured away
 
 Kept here so they are not rebuilt on intuition. Each was implemented, measured
