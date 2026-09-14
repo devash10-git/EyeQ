@@ -69,8 +69,14 @@ the lattice decoder runs standalone):
 
 ```bash
 python app.py                                  # http://127.0.0.1:8321
-MODEL_DIR=cluster_to_text_model python app.py  # with seq2seq disambiguation
 ```
+
+> **The seq2seq tier is not shipped.** `cluster_to_text_model/` holds only the
+> tokenizer and config — training finished (750/750 steps) but the model weights
+> were never saved, so `MODEL_DIR=cluster_to_text_model` fails with
+> `OSError: Error no file named model.safetensors, or pytorch_model.bin`.
+> Retrain with `python train.py train` to restore it. The decoder's exact-lookup
+> and lattice tiers are unaffected and are what the app actually uses.
 
 Grant webcam access and face the camera until the preview box border turns
 green (the box gives alignment hints: move closer / center your face). Then
@@ -100,14 +106,14 @@ python train.py train --model google-t5/t5-small --epochs 3 --max-samples 5000
 
 ```bash
 python train.py infer --vocab vocab-9.json --text "51663 531 421 232"
-python train.py infer --vocab vocab-9.json --model cluster_to_text_model --text "51663 531"
 ```
+
+(The `--model` variant needs a retrained checkpoint; see the note above.)
 
 **5. Evaluate decoder accuracy** on held-out sentences:
 
 ```bash
 python train.py eval --vocab vocab-9.json --samples 500
-python train.py eval --vocab vocab-9.json --model cluster_to_text_model --samples 500
 ```
 
 ## Cluster configurations
