@@ -1,0 +1,30 @@
+{
+  "well-conditioned": {
+    "n_samples": 35,
+    "n_coefficients": 5,
+    "kappa_normal_equations": 208.23898313477446,
+    "kappa_ridge": 207.43149511403857,
+    "qubits_to_index_5x5": 3.0,
+    "exact_objective_x": 0.02043566919951985,
+    "exact_solve_us": 9.294146000684123,
+    "vqls_objective_x": 0.020435669206922826,
+    "vqls_seconds": 2.344038957999146,
+    "vqls_steps": 300,
+    "gap_percent": 3.62257651768768e-08,
+    "slowdown_x": 252205.95392267415
+  },
+  "collinear head pose": {
+    "n_samples": 35,
+    "n_coefficients": 5,
+    "kappa_normal_equations": 219969309.10690135,
+    "kappa_ridge": 53224.17540199046,
+    "qubits_to_index_5x5": 3.0,
+    "exact_objective_x": 0.031067520403588376,
+    "exact_solve_us": 9.252291500160936,
+    "vqls_objective_x": 0.2968889518516638,
+    "vqls_seconds": 2.3837723750002624,
+    "vqls_steps": 300,
+    "gap_percent": 855.6248712316686,
+    "slowdown_x": 257641.2962084905
+  }
+}

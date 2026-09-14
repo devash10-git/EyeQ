@@ -1,0 +1,11 @@
+accelerate
+datasets
+evaluate
+numpy
+pandas
+sacrebleu
+torch
+transformers>=4.46
+fastapi
+uvicorn
+pydantic

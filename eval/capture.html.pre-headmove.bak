@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gaze calibration capture</title>
+<style>
+  :root { color-scheme: light dark; --dim:#6b7280; --ok:#1a7f4b; --bad:#b3261e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; padding:26px 30px 60px; max-width:820px; }
+  h1 { font-size:20px; margin:0 0 4px; } p.sub { margin:0 0 20px; color:var(--dim); }
+  label { display:block; margin:10px 0; font-size:14px; }
+  input[type=number] { font:inherit; padding:6px 9px; width:110px; }
+  button { font:inherit; font-weight:600; padding:9px 18px; border-radius:8px; border:1px solid rgba(128,128,128,.4); background:rgba(128,128,128,.10); cursor:pointer; margin:8px 8px 0 0; }
+  button.go { background:#0a7cff; color:#fff; border-color:#0a7cff; }
+  button:disabled { opacity:.4; cursor:default; }
+  #log { font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); white-space:pre; margin-top:14px; }
+  #stage { position:fixed; inset:0; display:none; background:#111; z-index:50; }
+  #dot { position:absolute; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%; background:#e8e8e8; box-shadow:0 0 0 3px rgba(0,0,0,.5); }
+  #dot.rec { background:#e0554d; }
+  #dot::after { content:""; position:absolute; left:11px; top:11px; width:4px; height:4px; border-radius:50%; background:#111; }
+  #hud { position:absolute; left:50%; top:18px; transform:translateX(-50%); color:#ccc; font:600 13px ui-monospace,Menlo,monospace; background:rgba(0,0,0,.55); padding:6px 14px; border-radius:9px; }
+  #cam { position:fixed; right:12px; bottom:12px; width:150px; height:113px; border-radius:10px; object-fit:cover; transform:scaleX(-1); border:3px solid #d05050; background:#000; z-index:60; pointer-events:none; }
+  #cam.ok { border-color:#2fbf71; }
+  .warn { color:var(--bad); font-weight:600; }
+</style>
+</head>
+<body>
+<h1>Gaze calibration capture</h1>
+<p class="sub">Records real fixations for <code>eval/gaze_bench.py</code>. Nothing is uploaded off this machine — the session is written to <code>eval/sessions/</code>.</p>
+
+<div id="setup">
+  <label>Screen width (cm, the visible glass — not the diagonal)
+    <input type="number" id="wcm" step="0.1" value="29.4"></label>
+  <label>Screen height (cm)
+    <input type="number" id="hcm" step="0.1" value="18.6"></label>
+  <label>Viewing distance, eye to screen (cm)
+    <input type="number" id="dist" step="1" value="55"></label>
+  <label>Participant label (optional, for your own records)
+    <input type="text" id="who" style="width:200px" placeholder="p01"></label>
+  <button class="go" id="start">Start capture</button>
+  <button id="fullscreen">Go fullscreen first (recommended)</button>
+  <div id="log">idle</div>
+</div>
+
+<div id="stage"><div id="hud"></div><div id="dot"></div></div>
+<video id="cam" autoplay playsinline muted></video>
+
+<script type="module">
+const MP_VERSION = "0.10.14";
+const MP_BUNDLE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/vision_bundle.mjs`;
+const MP_WASM   = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/wasm`;
+const MP_MODEL  = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+
+/* Landmark indices, identical to static/iris-tracker.js so the recorded f[8]
+   is the *same* vector the deployed estimator sees, not a re-derivation. */
+const LEFT_EYE  = { outer: 33,  inner: 133, top: 159, bottom: 145, iris: 468 };
+const RIGHT_EYE = { inner: 362, outer: 263, top: 386, bottom: 374, iris: 473 };
+const NOSE = 1;
+const IRIS_RING_L = [469, 470, 471, 472];   // ring around 468
+const IRIS_RING_R = [474, 475, 476, 477];   // ring around 473
+
+/* Protocol geometry.
+   13 fit targets: a 3x3 grid (four corners, four edge midpoints, centre) plus
+   four interior points. 8 hold-out targets interleave with that grid and are
+   never used for fitting — they sit at positions the fit set does not contain,
+   which is the only way an edge/corner claim can be tested honestly. */
+const FIT_XS = [0.06, 0.5, 0.94], FIT_YS = [0.06, 0.5, 0.94];
+const FIT = [];
+for (const y of FIT_YS) for (const x of FIT_XS) FIT.push([x, y]);
+for (const y of [0.30, 0.70]) for (const x of [0.30, 0.70]) FIT.push([x, y]);
+/* Hold-out targets must span every region the report breaks down by. An
+   earlier version interleaved them at positions that were all one-axis-extreme,
+   so every hold-out target classified as "edge" and the corner generalisation —
+   the entire case for a nonlinear model — could not be measured at all.
+   These sit inside the fit grid's corners rather than on top of them. */
+const HOLD = [
+  [0.10, 0.10], [0.90, 0.10], [0.10, 0.90], [0.90, 0.90],   // corner region
+  [0.50, 0.10], [0.50, 0.90],                               // edge region
+  [0.40, 0.62], [0.62, 0.40],                               // centre region
+];
+
+const FIXATIONS = 5;        // per target
+const SETTLE_MS = 400;      // dot shown, not yet recording
+const DISCARD_MS = 150;     // saccade settling, thrown away
+const RECORD_MS = 300;      // kept
+const GAP_MS = 120;
+
+const $ = (id) => document.getElementById(id);
+const log = (s) => { $("log").textContent = s; };
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+let landmarker = null, video = $("cam"), running = false;
+let latest = null, prevIris = null, lastT = 0;
+
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+/** Exactly static/iris-tracker.js::_features. */
+function features(lms) {
+  const L = LEFT_EYE, R = RIGHT_EYE, eps = 1e-6;
+  const hL = (lms[L.iris].x - lms[L.outer].x) / (lms[L.inner].x - lms[L.outer].x + eps);
+  const hR = (lms[R.iris].x - lms[R.inner].x) / (lms[R.outer].x - lms[R.inner].x + eps);
+  const vL = (lms[L.iris].y - lms[L.top].y) / (lms[L.bottom].y - lms[L.top].y + eps);
+  const vR = (lms[R.iris].y - lms[R.top].y) / (lms[R.bottom].y - lms[R.top].y + eps);
+  const faceW = Math.hypot(lms[R.outer].x - lms[L.outer].x, lms[R.outer].y - lms[L.outer].y);
+  return [1, hL, hR, vL, vR, lms[NOSE].x, lms[NOSE].y, faceW];
+}
+
+/** Per-eye aspect ratio (the tracker takes the min of these; we keep both). */
+function earPair(lms) {
+  const eps = 1e-6, L = LEFT_EYE, R = RIGHT_EYE;
+  return [
+    Math.abs(lms[L.bottom].y - lms[L.top].y) / (Math.abs(lms[L.inner].x - lms[L.outer].x) + eps),
+    Math.abs(lms[R.bottom].y - lms[R.top].y) / (Math.abs(lms[R.outer].x - lms[R.inner].x) + eps),
+  ];
+}
+
+/** Mean centre-to-ring distance. Human iris diameter is ~11.7 mm and nearly
+    constant across adults, so this is a metric scale cue rather than a proxy. */
+function irisRadius(lms, centre, ring) {
+  let s = 0;
+  for (const i of ring) s += dist(lms[centre], lms[i]);
+  return s / ring.length;
+}
+
+/** Iris position normalised against the canthi (rigid) instead of the eyelids
+    (which move with squint and partial blink). Component A1 wants both. */
+function canthusNorm(lms) {
+  const eps = 1e-6, L = LEFT_EYE, R = RIGHT_EYE;
+  const wL = dist(lms[L.inner], lms[L.outer]) + eps;
+  const wR = dist(lms[R.inner], lms[R.outer]) + eps;
+  const cLx = (lms[L.inner].x + lms[L.outer].x) / 2, cLy = (lms[L.inner].y + lms[L.outer].y) / 2;
+  const cRx = (lms[R.inner].x + lms[R.outer].x) / 2, cRy = (lms[R.inner].y + lms[R.outer].y) / 2;
+  return [
+    (lms[L.iris].x - cLx) / wL, (lms[L.iris].y - cLy) / wL,
+    (lms[R.iris].x - cRx) / wR, (lms[R.iris].y - cRy) / wR,
+  ];
+}
+
+function poseFromMatrix(m) {
+  if (!m || m.length < 16) return null;
+  const R00 = m[0], R10 = m[1], R02 = m[8], R12 = m[9], R22 = m[10];
+  return { yaw: Math.atan2(R02, R22), pitch: Math.atan2(-R12, Math.hypot(R02, R22)), roll: Math.atan2(R10, R00) };
+}
+
+function loop() {
+  if (!running) return;
+  if (video.readyState >= 2) {
+    let res = null;
+    try { res = landmarker.detectForVideo(video, performance.now()); } catch (_) {}
+    const lms = res?.faceLandmarks?.[0] || null;
+    if (lms) {
+      const f = features(lms);
+      const [earL, earR] = earPair(lms);
+      const faceW = f[7];
+      // The deployed quality heuristic, recorded verbatim. MediaPipe's JS API
+      // does not expose a real per-landmark confidence, so this geometric
+      // score is recorded under its own name rather than dressed up as one.
+      const size = Math.max(0, Math.min(1, (faceW - 0.06) / 0.06));
+      const centre = Math.max(0, Math.min(1, 1 - (Math.abs(lms[NOSE].x - 0.5) - 0.15) / 0.15));
+      const quality = size * centre * (Math.min(earL, earR) < 0.14 ? 0 : 1);
+      const irisMid = { x: (lms[468].x + lms[473].x) / 2, y: (lms[468].y + lms[473].y) / 2 };
+      const now = performance.now();
+      let vel = 0;
+      if (prevIris && now > lastT) vel = dist(irisMid, prevIris) / ((now - lastT) / 1000);
+      prevIris = irisMid; lastT = now;
+      const pose = poseFromMatrix(res?.facialTransformationMatrixes?.[0]?.data) ||
+                   { yaw: lms[NOSE].x - 0.5, pitch: lms[NOSE].y - 0.5, roll: 0 };
+      latest = {
+        f, ear_l: earL, ear_r: earR,
+        iris_r_l: irisRadius(lms, 468, IRIS_RING_L),
+        iris_r_r: irisRadius(lms, 473, IRIS_RING_R),
+        canthus: canthusNorm(lms),
+        gaze_velocity: vel, quality_geometric: quality,
+        yaw: pose.yaw, pitch: pose.pitch, roll: pose.roll,
+        face_ok: faceW >= 0.10 && lms[NOSE].x > 0.30 && lms[NOSE].x < 0.70,
+      };
+      $("cam").classList.toggle("ok", latest.face_ok && quality > 0);
+    } else { latest = null; $("cam").classList.remove("ok"); }
+  }
+  requestAnimationFrame(loop);
+}
+
+$("fullscreen").onclick = () => document.documentElement.requestFullscreen?.();
+
+$("start").onclick = async () => {
+  $("start").disabled = true;
+  try {
+    log("requesting camera…");
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720, facingMode: "user" } });
+    video.srcObject = stream; await video.play();
+    log("loading MediaPipe (first run downloads ~13 MB)…");
+    const mp = await import(MP_BUNDLE);
+    const fs = await mp.FilesetResolver.forVisionTasks(MP_WASM);
+    const make = (d) => mp.FaceLandmarker.createFromOptions(fs, {
+      baseOptions: { modelAssetPath: MP_MODEL, delegate: d },
+      runningMode: "VIDEO", numFaces: 1, outputFacialTransformationMatrixes: true,
+    });
+    try { landmarker = await make("GPU"); } catch (_) { landmarker = await make("CPU"); }
+    running = true; loop();
+    log("waiting for a stable face…");
+    for (let i = 0; i < 400 && !(latest && latest.face_ok); i++) await sleep(50);
+    if (!latest?.face_ok) { log("no stable face detected — check lighting and framing, then reload"); $("start").disabled = false; return; }
+    await runProtocol();
+  } catch (e) {
+    log("failed: " + (e && (e.name + ": " + e.message) || e));
+    $("start").disabled = false;
+  }
+};
+
+async function runProtocol() {
+  const stage = $("stage"), dot = $("dot"), hud = $("hud");
+  stage.style.display = "block";
+  const W = window.innerWidth, H = window.innerHeight;
+  const targets = [
+    ...FIT.map((p, i) => ({ x: p[0], y: p[1], id: `fit_${String(i).padStart(2, "0")}`, split: "fit" })),
+    ...HOLD.map((p, i) => ({ x: p[0], y: p[1], id: `hold_${String(i).padStart(2, "0")}`, split: "holdout" })),
+  ];
+  // Interleave so drift and fatigue spread evenly over both splits rather than
+  // loading all the hold-out targets into the tired end of the session.
+  targets.sort(() => 0);
+  const order = [];
+  const fit = targets.filter(t => t.split === "fit"), hold = targets.filter(t => t.split === "holdout");
+  while (fit.length || hold.length) {
+    if (fit.length) order.push(fit.shift());
+    if (fit.length) order.push(fit.shift());
+    if (hold.length) order.push(hold.shift());
+  }
+
+  const samples = [];
+  let dropped = 0;
+  for (let ti = 0; ti < order.length; ti++) {
+    const t = order[ti];
+    const px = 26 + t.x * (W - 52), py = 26 + t.y * (H - 52);
+    dot.style.left = px + "px"; dot.style.top = py + "px";
+    for (let fx = 0; fx < FIXATIONS; fx++) {
+      hud.textContent = `target ${ti + 1}/${order.length}  ·  fixation ${fx + 1}/${FIXATIONS}  ·  look at the dot`;
+      dot.classList.remove("rec");
+      await sleep(SETTLE_MS);
+      await sleep(DISCARD_MS);                 // saccade settling, not recorded
+      dot.classList.add("rec");
+      const t0 = performance.now();
+      while (performance.now() - t0 < RECORD_MS) {
+        if (latest && latest.face_ok && latest.quality_geometric > 0) {
+          samples.push({
+            t: +(performance.now()).toFixed(1),
+            target_x: t.x, target_y: t.y, target_px: [+px.toFixed(1), +py.toFixed(1)],
+            target_id: t.id, split: t.split, fixation: fx,
+            f: latest.f.map(v => +v.toFixed(6)),
+            iris_r_l: +latest.iris_r_l.toFixed(6), iris_r_r: +latest.iris_r_r.toFixed(6),
+            ear_l: +latest.ear_l.toFixed(4), ear_r: +latest.ear_r.toFixed(4),
+            canthus: latest.canthus.map(v => +v.toFixed(6)),
+            gaze_velocity: +latest.gaze_velocity.toFixed(5),
+            quality_geometric: +latest.quality_geometric.toFixed(4),
+            yaw: +latest.yaw.toFixed(5), pitch: +latest.pitch.toFixed(5), roll: +latest.roll.toFixed(5),
+          });
+        } else dropped++;
+        await sleep(16);
+      }
+      dot.classList.remove("rec");
+      await sleep(GAP_MS);
+    }
+  }
+  stage.style.display = "none";
+
+  const wcm = parseFloat($("wcm").value), hcm = parseFloat($("hcm").value);
+  const d = parseFloat($("dist").value);
+  const pxPerCm = W / wcm;
+  const session = {
+    schema: 1,
+    session_id: `${Date.now()}`,
+    participant: $("who").value || null,
+    recorded_utc: new Date().toISOString(),
+    data_source: "recorded_human",          // never "synthetic" — gaze_bench.py checks this
+    screen: { w_px: W, h_px: H, dpr: window.devicePixelRatio || 1, w_cm: wcm, h_cm: hcm },
+    viewing_distance_cm: d,
+    px_per_cm: +pxPerCm.toFixed(4),
+    // 1 degree subtends d*tan(1deg) cm at distance d; converted with the
+    // measured px/cm rather than an assumed display density.
+    px_per_degree: +(Math.tan(Math.PI / 180) * d * pxPerCm).toFixed(4),
+    // Top-row pitch of the deployed keyboard: 10 keys, 12 px page padding,
+    // 10 px gaps (static/style.css).
+    key_pitch_px: +(((W - 24 - 9 * 10) / 10) + 10).toFixed(2),
+    protocol: { fit_targets: FIT.length, holdout_targets: HOLD.length, fixations_per_target: FIXATIONS,
+                settle_ms: SETTLE_MS, discard_ms: DISCARD_MS, record_ms: RECORD_MS },
+    dropped_frames: dropped,
+    samples,
+  };
+
+  log(`captured ${samples.length} samples over ${order.length} targets (${dropped} frames dropped). uploading…`);
+  try {
+    const r = await fetch("/capture/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(session) });
+    const j = await r.json();
+    log(`saved: ${j.path}\n\nNext:  python3 eval/gaze_bench.py`);
+  } catch (e) {
+    const blob = new Blob([JSON.stringify(session)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `session_${session.session_id}.json`; a.click();
+    log("upload failed (" + e + ") — downloaded instead; move it into eval/sessions/");
+  }
+}
+</script>
+</body>
+</html>

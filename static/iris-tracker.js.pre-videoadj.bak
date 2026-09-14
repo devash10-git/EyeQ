@@ -1,0 +1,734 @@
+/* IrisTracker — custom webcam gaze estimation from iris landmarks.
+ *
+ * Built on MediaPipe FaceLandmarker (478 landmarks incl. iris rings) instead
+ * of WebGazer: it runs on the GPU when available and automatically falls back
+ * to CPU/WASM when WebGL is unavailable, so a disabled-acceleration Chrome
+ * still tracks. Gaze is estimated from where the iris sits inside each eye
+ * opening, plus head position, mapped to screen coordinates by a ridge
+ * regression trained on the user's calibration clicks.
+ *
+ * Feature vector per frame (8): [1, hL, hR, vL, vR, noseX, noseY, faceScale]
+ *   hL/hR: horizontal iris position within left/right eye (0..1)
+ *   vL/vR: vertical iris position within the eyelids (0..1)
+ *   nose + face scale compensate head translation and distance.
+ * Calibration samples (click at a known point while looking at it) fit
+ * weights w so that screen = w · features. Samples persist in localStorage.
+ */
+
+const MP_VERSION = "0.10.14";
+const MP_BUNDLE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/vision_bundle.mjs`;
+const MP_WASM = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/wasm`;
+const MP_MODEL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+
+// FaceMesh landmark indices
+const LEFT_EYE = { outer: 33, inner: 133, top: 159, bottom: 145, iris: 468 };
+const RIGHT_EYE = { inner: 362, outer: 263, top: 386, bottom: 374, iris: 473 };
+const NOSE = 1;
+const STORAGE_KEY = "iris-calib-v1";
+const FEAT_DIM = 8;
+
+/* ---------------------------------------------------------------------------
+ * Gaze model selection.
+ *
+ * "krr"   RBF kernel ridge regression, layered on top of the linear fit.
+ * "ridge" the original linear ridge alone — the behaviour before this change.
+ *
+ * Measured on two recorded human sessions (eval/compare_models.py), held-out
+ * targets, grouped by target, five seeds:
+ *
+ *     linear ridge      179.8 / 290.8 px      pooled 235.3 px
+ *     RBF kernel ridge  135.5 / 211.6 px      pooled 173.6 px   +26.2%
+ *
+ * It won both sittings (+24.6%, +27.2%), unlike the MLPs, whose best
+ * configuration topped one session and came last in the other.
+ *
+ * The linear fit is still computed and kept whichever mode is active: it is
+ * the fallback when the kernel solve fails, and `_updateSigma` derives every
+ * prediction's confidence from its A-inverse. Reverting is this one constant,
+ * or "?model=ridge" in the URL for a single page load.
+ * ------------------------------------------------------------------------- */
+const GAZE_MODEL_DEFAULT = "krr";
+const KRR_MIN_GROUPS = 7;         // distinct screen positions needed to fit
+const KRR_LAMBDAS = [1e-4, 1e-3, 1e-2, 1e-1, 1, 10];
+const KRR_GAMMA_SCALES = [0.1, 0.25, 0.5, 1, 2, 4];   // multiples of 1/(2*median dist)
+const KRR_REJECT_MARGIN = 1.10;   // kernel must be >10% worse on LOO to be rejected
+
+function gazeModelMode() {
+  try {
+    const q = new URLSearchParams(location.search).get("model");
+    if (q === "ridge" || q === "krr") return q;
+    const stored = localStorage.getItem("gaze-model");
+    if (stored === "ridge" || stored === "krr") return stored;
+  } catch (_) {}
+  return GAZE_MODEL_DEFAULT;
+}
+
+/** Lower-triangular L with A = L Lᵀ, or null if A is not positive definite. */
+function cholesky(A, n) {
+  const L = new Float64Array(n * n);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j <= i; j++) {
+      let acc = A[i * n + j];
+      for (let k = 0; k < j; k++) acc -= L[i * n + k] * L[j * n + k];
+      if (i === j) {
+        if (!(acc > 0)) return null;          // also catches NaN
+        L[i * n + i] = Math.sqrt(acc);
+      } else {
+        L[i * n + j] = acc / L[j * n + j];
+      }
+    }
+  }
+  return L;
+}
+
+/** Solve L Lᵀ x = b in place of an explicit inverse. */
+function cholSolve(L, b, n) {
+  const y = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    let acc = b[i];
+    for (let k = 0; k < i; k++) acc -= L[i * n + k] * y[k];
+    y[i] = acc / L[i * n + i];
+  }
+  const x = new Float64Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let acc = y[i];
+    for (let k = i + 1; k < n; k++) acc -= L[k * n + i] * x[k];
+    x[i] = acc / L[i * n + i];
+  }
+  return x;
+}
+const MIN_SAMPLES_TO_FIT = 8;
+
+function solveLinear(A, b) {
+  // Gauss-Jordan with partial pivoting. Returns null on (near-)singular
+  // systems — the pivot test is relative to the matrix scale, because an
+  // absolute epsilon lets numerically-zero pivots through when entries are
+  // large (collinear features), which poisons the solution with NaN/Inf.
+  const n = b.length;
+  let scale = 0;
+  for (const row of A) for (const v of row) scale = Math.max(scale, Math.abs(v));
+  if (!scale) return null;
+  const M = A.map((row, i) => [...row, b[i]]);
+  for (let col = 0; col < n; col++) {
+    let best = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[best][col])) best = r;
+    [M[col], M[best]] = [M[best], M[col]];
+    const pivot = M[col][col];
+    if (Math.abs(pivot) < 1e-10 * scale) return null;
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue;
+      const factor = M[r][col] / pivot;
+      for (let c = col; c <= n; c++) M[r][c] -= factor * M[col][c];
+    }
+  }
+  const w = M.map((row, i) => row[n] / row[i]);
+  return w.every(Number.isFinite) ? w : null;
+}
+
+class IrisTracker {
+  constructor({ video, overlay, onGaze, onFace, onReady }) {
+    this.video = video;
+    this.overlay = overlay;
+    this.onGaze = onGaze;     // (x, y) in page pixels, only once fitted
+    this.onFace = onFace;     // (state, hint) — "none" | "small" | "offcenter" | "ok"
+    this.onReady = onReady;   // (delegate) — "GPU" or "CPU"
+    this.landmarker = null;
+    this.delegate = null;
+    this.stream = null;
+    this.running = false;
+    this.faceState = "none";
+    this.recentFeatures = []; // ring buffer of {f, q}: features + frame quality
+    this.recentPoints = [];   // recent gaze points, for movement kinematics
+    this.lastEar = null;      // eye aspect ratio of the newest frame
+    this.earWindow = [];      // recent raw EAR values, for the open-eye baseline
+    this.earBaseline = null;  // this user's raw EAR when the eye is fully open
+    this.lastVelocity = 0;    // normalised inter-frame gaze motion
+    this.histEma = 0;         // EMA of recent motion (movement "history")
+    this.samples = [];        // { f: number[8], x, y, w } with x,y normalized 0..1
+    this.meta = { corners: [] };
+    this.wx = null;
+    this.wy = null;
+    this.krr = null;                 // fitted kernel model, or null
+    this.model = gazeModelMode();
+    this.Ainv = null;         // (FᵀWF + λI)⁻¹ — kept for predictive variance
+    this.residVar = null;     // [σ²x, σ²y] residual variance of the fit
+    this.lastSigma = null;    // {sx, sy} predictive std-dev (normalized units)
+    this.frameCount = 0;
+    this._lastVideoTime = -1;
+  }
+
+  get fitted() { return this.wx !== null; }
+
+  loadSaved() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data.samples) || data.samples.length < MIN_SAMPLES_TO_FIT) return false;
+      this.samples = data.samples;
+      this.meta = data.meta || { corners: [] };
+      this._fit();
+      return this.fitted;
+    } catch (_) { return false; }
+  }
+
+  _save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ samples: this.samples, meta: this.meta })); }
+    catch (_) {}
+  }
+
+  resetCalibration() {
+    this.samples = [];
+    this.meta = { corners: [] };
+    this.wx = this.wy = null;
+    this.krr = null;
+    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+  }
+
+  async start() {
+    this.stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 480, facingMode: "user" },
+    });
+    this.video.srcObject = this.stream;
+    await this.video.play();
+
+    const mp = await import(MP_BUNDLE);
+    const resolver = await mp.FilesetResolver.forVisionTasks(MP_WASM);
+    const make = (delegate) => mp.FaceLandmarker.createFromOptions(resolver, {
+      baseOptions: { modelAssetPath: MP_MODEL, delegate },
+      runningMode: "VIDEO",
+      numFaces: 1,
+    });
+    try {
+      this.landmarker = await make("GPU");
+      this.delegate = "GPU";
+    } catch (_) {
+      // no WebGL / GPU blocked — WASM on the CPU works everywhere
+      this.landmarker = await make("CPU");
+      this.delegate = "CPU";
+    }
+
+    this.running = true;
+    this.onReady?.(this.delegate);
+    this._loop();
+  }
+
+  stop() {
+    this.running = false;
+    this.stream?.getTracks().forEach(t => t.stop());
+  }
+
+  _loop() {
+    if (!this.running) return;
+    if (this.video.readyState >= 2 && this.video.currentTime !== this._lastVideoTime) {
+      this._lastVideoTime = this.video.currentTime;
+      let result = null;
+      try { result = this.landmarker.detectForVideo(this.video, performance.now()); } catch (_) {}
+      this._process(result?.faceLandmarks?.[0] || null);
+    }
+    requestAnimationFrame(() => this._loop());
+  }
+
+  _process(lms) {
+    if (!lms) {
+      this._setFace("none", "No face detected — face the camera, add light in front of you");
+      this._drawOverlay(null);
+      return;
+    }
+    const faceW = Math.hypot(lms[RIGHT_EYE.outer].x - lms[LEFT_EYE.outer].x,
+                             lms[RIGHT_EYE.outer].y - lms[LEFT_EYE.outer].y);
+    const noseX = lms[NOSE].x;
+    if (faceW < 0.10) {
+      this._setFace("small", "Move closer to the camera (about 50–60 cm)");
+    } else if (noseX < 0.30 || noseX > 0.70) {
+      this._setFace("offcenter", "Center your face in the camera view");
+    } else {
+      this._setFace("ok", "Face detected — iris tracking live");
+    }
+    this._drawOverlay(lms);
+
+    const f = this._features(lms);
+    const q = this._quality(lms, faceW);
+    this.recentFeatures.push({ f, q });
+    if (this.recentFeatures.length > 8) this.recentFeatures.shift();
+    this.frameCount++;
+    this.lastEar = this._ear(lms);
+    this._updateEarBaseline(this.lastEar);
+
+    if (this.fitted && this.faceState === "ok") {
+      // Fixation-locked aggregation: predict from the per-dimension median
+      // of recent good frames instead of a single (possibly blinking) frame.
+      // Median over ~6 frames cuts sensor noise without EMA's lag-and-blend.
+      const fa = this._aggregate(0.5, 6);
+      if (!fa) return; // mid-blink / unstable — freeze rather than jump
+      const k = this.krr ? this._krrPredict(fa) : null;
+      const px = k ? k[0] : this._dot(this.wx, fa);
+      const py = k ? k[1] : this._dot(this.wy, fa);
+      const x = Math.min(1, Math.max(0, px));
+      const y = Math.min(1, Math.max(0, py));
+      this._updateSigma(fa);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        this._trackKinematics(x, y);
+        this.onGaze?.(x * window.innerWidth, y * window.innerHeight);
+      }
+    }
+  }
+
+  /** Maintain the gaze-kinematics history the movement classifier needs. */
+  _trackKinematics(x, y) {
+    const prev = this.recentPoints[this.recentPoints.length - 1];
+    const step = prev ? Math.hypot(x - prev[0], y - prev[1]) : 0;
+    // normalised so a full-screen jump is ~1; 0.25 screen-widths/frame saturates
+    this.lastVelocity = Math.min(1, step / 0.25);
+    this.histEma = 0.8 * this.histEma + 0.2 * this.lastVelocity;
+    this.recentPoints.push([x, y]);
+    if (this.recentPoints.length > 10) this.recentPoints.shift();
+  }
+
+  /** Feature vector for the quantum movement classifier (see movement_qsvm.py).
+   *  Order must match MOVEMENT_FEATURES: [ear, velocity, stability, history]. */
+  movementFeatures() {
+    if (!this.recentPoints.length) return null;
+    const pts = this.recentPoints;
+    const mx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+    const my = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+    const spread = Math.sqrt(
+      pts.reduce((s, p) => s + (p[0] - mx) ** 2 + (p[1] - my) ** 2, 0) / pts.length
+    );
+    // stability: 1 when the cluster is tight, decaying as it disperses
+    const stability = Math.max(0, Math.min(1, 1 - spread / 0.12));
+    return {
+      ear: this.openness(),
+      velocity: Math.max(0, Math.min(1, this.lastVelocity ?? 0)),
+      stability,
+      history: Math.max(0, Math.min(1, this.histEma ?? 0)),
+    };
+  }
+
+  /** Rolling estimate of this user's raw EAR with the eye fully open.
+   *
+   *  The raw aspect ratio depends on eye shape and camera distance, so it has
+   *  no universal scale: a typical open eye lands anywhere in ~0.18-0.40. A high
+   *  percentile of recent frames is a robust "open" reference because blinks are
+   *  a small minority of frames, and it re-adapts if the user moves closer or
+   *  further from the camera.
+   */
+  _updateEarBaseline(ear) {
+    if (!Number.isFinite(ear)) return;
+    this.earWindow.push(ear);
+    if (this.earWindow.length > 150) this.earWindow.shift();   // ~5 s at 30 fps
+    if (this.earWindow.length < 30) return;                    // too early to trust
+    const sorted = [...this.earWindow].sort((a, b) => a - b);
+    this.earBaseline = sorted[Math.floor(sorted.length * 0.9)];
+  }
+
+  /** Eye openness on the [0,1] convention the quantum models were trained with
+   *  (~0.78 open, ~0.12 closed), rather than the raw aspect ratio.
+   *
+   *  The models are trained on normalised openness; feeding them the raw ratio
+   *  put every open eye inside the blink region of the decision boundary, so the
+   *  movement gate rejected every keystroke. Until the baseline is established
+   *  this reports "open": an unknown eye must never be assumed shut, because
+   *  that would block typing during the first seconds of every session.
+   */
+  openness() {
+    const raw = this.lastEar;
+    if (!Number.isFinite(raw) || !this.earBaseline || this.earBaseline < 1e-3) {
+      return 0.78;
+    }
+    const r = Math.max(0, Math.min(1, raw / this.earBaseline));
+    return 0.12 + 0.66 * r;
+  }
+
+  /** Feature vector for the quantum gaze->letter stack (see gaze_letter.py).
+   *  Both eyes are averaged into one iris ratio and the nose landmark becomes
+   *  head pose on the (v - 0.5) * 2 convention the stack was trained with.
+   *  Uses the same blink-rejected median window as prediction, so it costs
+   *  nothing extra per frame. */
+  gazeFeatures() {
+    const f = this._aggregate(0.5, 6);
+    if (!f) return null;
+    return {
+      iris_x: (f[1] + f[2]) / 2,
+      iris_y: (f[3] + f[4]) / 2,
+      yaw: (f[5] - 0.5) * 2,
+      pitch: (f[6] - 0.5) * 2,
+    };
+  }
+
+  /** Eye Aspect Ratio per eye: eyelid opening / eye width. Blink => ~0. */
+  _ear(lms) {
+    const eps = 1e-6;
+    const L = LEFT_EYE, R = RIGHT_EYE;
+    const earL = Math.abs(lms[L.bottom].y - lms[L.top].y) /
+                 (Math.abs(lms[L.inner].x - lms[L.outer].x) + eps);
+    const earR = Math.abs(lms[R.bottom].y - lms[R.top].y) /
+                 (Math.abs(lms[R.outer].x - lms[R.inner].x) + eps);
+    return Math.min(earL, earR);
+  }
+
+  /** Continuous frame quality in [0,1]: face size × centering × eyes open. */
+  _quality(lms, faceW) {
+    const size = Math.max(0, Math.min(1, (faceW - 0.06) / 0.06));
+    const center = Math.max(0, Math.min(1, 1 - (Math.abs(lms[NOSE].x - 0.5) - 0.15) / 0.15));
+    const eyes = this._ear(lms) < 0.14 ? 0 : 1; // blink rejection
+    return size * center * eyes;
+  }
+
+  /** Per-dimension median of the last `maxN` frames with quality >= minQ. */
+  _aggregate(minQ, maxN) {
+    const good = [];
+    for (let i = this.recentFeatures.length - 1; i >= 0 && good.length < maxN; i--) {
+      if (this.recentFeatures[i].q >= minQ) good.push(this.recentFeatures[i].f);
+    }
+    if (good.length < 3) return null;
+    const out = new Array(FEAT_DIM);
+    for (let d = 0; d < FEAT_DIM; d++) {
+      const vals = good.map(f => f[d]).sort((a, b) => a - b);
+      const m = vals.length >> 1;
+      out[d] = vals.length % 2 ? vals[m] : (vals[m - 1] + vals[m]) / 2;
+    }
+    return out;
+  }
+
+  /** Predictive std-dev of the ridge estimate at feature point f:
+   *  σ²(f) = σ²_resid · (1 + fᵀ A⁻¹ f). Analytic — no extra fitting. */
+  _updateSigma(f) {
+    if (!this.Ainv || !this.residVar) { this.lastSigma = null; return; }
+    let g = 0;
+    for (let i = 0; i < FEAT_DIM; i++) {
+      let row = 0;
+      for (let j = 0; j < FEAT_DIM; j++) row += this.Ainv[i][j] * f[j];
+      g += f[i] * row;
+    }
+    const lever = 1 + Math.max(0, g);
+    this.lastSigma = {
+      sx: Math.sqrt(this.residVar[0] * lever),
+      sy: Math.sqrt(this.residVar[1] * lever),
+    };
+  }
+
+  _setFace(state, hint) {
+    if (state !== this.faceState) {
+      this.faceState = state;
+      this.onFace?.(state, hint);
+    }
+  }
+
+  _features(lms) {
+    const L = LEFT_EYE, R = RIGHT_EYE, eps = 1e-6;
+    const hL = (lms[L.iris].x - lms[L.outer].x) / (lms[L.inner].x - lms[L.outer].x + eps);
+    const hR = (lms[R.iris].x - lms[R.inner].x) / (lms[R.outer].x - lms[R.inner].x + eps);
+    const vL = (lms[L.iris].y - lms[L.top].y) / (lms[L.bottom].y - lms[L.top].y + eps);
+    const vR = (lms[R.iris].y - lms[R.top].y) / (lms[R.bottom].y - lms[R.top].y + eps);
+    const faceW = Math.hypot(lms[R.outer].x - lms[L.outer].x, lms[R.outer].y - lms[L.outer].y);
+    return [1, hL, hR, vL, vR, lms[NOSE].x, lms[NOSE].y, faceW];
+  }
+
+  _dot(w, f) { let s = 0; for (let i = 0; i < FEAT_DIM; i++) s += w[i] * f[i]; return s; }
+
+  /* ---------------- RBF kernel ridge ----------------
+   *
+   *     alpha = (K + lambda I)^-1 y,    yhat(z) = sum_i alpha_i k(z, z_i)
+   *
+   * Closed-form, so there is no optimiser in the loop and no initialisation to
+   * get unlucky with — which is why this was preferred over an MLP of similar
+   * measured accuracy. Fitting is O(n^3) and happens on a calibration click;
+   * prediction is n kernel evaluations, about 200 exp() calls per frame. */
+
+  /** Feature 0 is the constant 1, so only 1..7 carry information. */
+  _krrStandardize() {
+    const d = FEAT_DIM - 1;
+    const mean = new Float64Array(d), std = new Float64Array(d).fill(1);
+    const n = this.samples.length;
+    for (let k = 0; k < d; k++) {
+      let m = 0;
+      for (const s of this.samples) m += s.f[k + 1];
+      m /= n;
+      let v = 0;
+      for (const s of this.samples) { const e = s.f[k + 1] - m; v += e * e; }
+      mean[k] = m;
+      std[k] = Math.sqrt(v / n) || 1;
+    }
+    return { mean, std, d };
+  }
+
+  /** Group samples by the point on screen they were recorded at.
+   *
+   * The ~5 clicks on one calibration dot are not five observations — they are
+   * one observation measured five times. Fitting and, crucially, *selecting
+   * hyperparameters* on them as if they were independent makes leave-one-out
+   * look at a sample whose near-identical siblings are still in the training
+   * set, which reports that almost no regularisation is needed. The first
+   * version of this did exactly that, chose lambda = 1e-4, and lost to the
+   * linear ridge by 33% on a recorded session. */
+  _krrGroups() {
+    const by = new Map();
+    for (const s of this.samples) {
+      const key = Math.round(s.x * 20) + "_" + Math.round(s.y * 20);
+      if (!by.has(key)) by.set(key, []);
+      by.get(key).push(s);
+    }
+    const out = [];
+    for (const group of by.values()) {
+      const d = FEAT_DIM;
+      const f = new Array(d).fill(0);
+      let x = 0, y = 0, wsum = 0;
+      for (const s of group) {
+        const w = s.w == null ? 1 : s.w;
+        for (let k = 0; k < d; k++) f[k] += w * s.f[k];
+        x += w * s.x; y += w * s.y; wsum += w;
+      }
+      if (!(wsum > 0)) continue;
+      for (let k = 0; k < d; k++) f[k] /= wsum;
+      out.push({ f, x: x / wsum, y: y / wsum });
+    }
+    return out;
+  }
+
+  _krrFit() {
+    const pts = this._krrGroups();
+    const G = pts.length;
+    if (G < KRR_MIN_GROUPS) return null;
+
+    const d = FEAT_DIM - 1;
+    const mean = new Float64Array(d), std = new Float64Array(d).fill(1);
+    for (let k = 0; k < d; k++) {
+      let m = 0;
+      for (const p of pts) m += p.f[k + 1];
+      m /= G;
+      let v = 0;
+      for (const p of pts) { const e = p.f[k + 1] - m; v += e * e; }
+      mean[k] = m; std[k] = Math.sqrt(v / G) || 1;
+    }
+    const Z = new Float64Array(G * d);
+    const yx = new Float64Array(G), yy = new Float64Array(G);
+    pts.forEach((p, i) => {
+      for (let k = 0; k < d; k++) Z[i * d + k] = (p.f[k + 1] - mean[k]) / std[k];
+      yx[i] = p.x; yy[i] = p.y;
+    });
+
+    const D2 = new Float64Array(G * G);
+    const flat = [];
+    for (let i = 0; i < G; i++) {
+      for (let j = i + 1; j < G; j++) {
+        let acc = 0;
+        for (let k = 0; k < d; k++) { const e = Z[i * d + k] - Z[j * d + k]; acc += e * e; }
+        D2[i * G + j] = D2[j * G + i] = acc;
+        flat.push(acc);
+      }
+    }
+    if (!flat.length) return null;
+    flat.sort((a, b) => a - b);
+    const med = flat[Math.floor(flat.length / 2)] || 1;
+
+    // With one point per target, leave-one-out is honest and cheap: G solves of
+    // a (G-1) system per candidate, G being 7 to 13. Both gamma and lambda are
+    // chosen this way rather than gamma coming from a heuristic.
+    let best = null;
+    for (const gs of KRR_GAMMA_SCALES) {
+      const gamma = gs / (2 * med);
+      const K = new Float64Array(G * G);
+      for (let i = 0; i < G * G; i++) K[i] = Math.exp(-gamma * D2[i]);
+      for (const lam of KRR_LAMBDAS) {
+        let err = 0, ok = true;
+        for (let h = 0; h < G; h++) {                 // hold out target h
+          const m = G - 1;
+          const A = new Float64Array(m * m);
+          const bx = new Float64Array(m), byv = new Float64Array(m);
+          let ri = 0;
+          for (let i = 0; i < G; i++) {
+            if (i === h) continue;
+            let rj = 0;
+            for (let j = 0; j < G; j++) {
+              if (j === h) continue;
+              A[ri * m + rj] = K[i * G + j] + (i === j ? lam : 0);
+              rj++;
+            }
+            bx[ri] = yx[i]; byv[ri] = yy[i]; ri++;
+          }
+          const L = cholesky(A, m);
+          if (!L) { ok = false; break; }
+          const ax = cholSolve(L, bx, m), ay = cholSolve(L, byv, m);
+          let px = 0, py = 0, ci = 0;
+          for (let i = 0; i < G; i++) {
+            if (i === h) continue;
+            const kv = K[h * G + i];
+            px += ax[ci] * kv; py += ay[ci] * kv; ci++;
+          }
+          err += (px - yx[h]) ** 2 + (py - yy[h]) ** 2;
+        }
+        if (!ok) continue;
+        if (!best || err < best.err) best = { err, gamma, lam, K };
+      }
+    }
+    if (!best) return null;
+
+    const A = Float64Array.from(best.K);
+    for (let i = 0; i < G; i++) A[i * G + i] += best.lam;
+    const L = cholesky(A, G);
+    if (!L) return null;
+
+    /* Safety check, with a margin.
+     *
+     * The kernel should not replace the linear fit if it is worse — but
+     * leave-one-out over 13 targets is a noisy estimator, and requiring the
+     * kernel to merely *win* on it discards real gains to that noise. Measured
+     * on a recorded session: kernel LOO 0.2274 against linear 0.2225, a 2%
+     * deficit that is indistinguishable from noise, while on genuinely
+     * held-out targets the kernel was 13.6% better. A strict comparison
+     * rejected it and kept the worse model.
+     *
+     * So the kernel is kept unless it is clearly worse. A model that is
+     * actually broken — the earlier per-sample variant that chose lambda=1e-4
+     * and lost by 33% — fails this by a wide margin and is still rejected. */
+    const linErr = this._linearLooErr(pts);
+    const krrErr = Math.sqrt(best.err / G);
+    if (linErr !== null && krrErr > linErr * KRR_REJECT_MARGIN) return null;
+
+    return { Z, d, n: G, gamma: best.gamma, mean, std,
+             ax: cholSolve(L, yx, G), ay: cholSolve(L, yy, G),
+             lambda: best.lam, looErr: krrErr, linearLooErr: linErr };
+  }
+
+  /** Leave-one-target-out error of the deployed linear ridge, same points. */
+  _linearLooErr(pts) {
+    const G = pts.length, d = FEAT_DIM;
+    if (G < d + 2) return null;
+    let err = 0;
+    for (let h = 0; h < G; h++) {
+      const A = Array.from({ length: d }, () => new Array(d).fill(0));
+      const bx = new Array(d).fill(0), by = new Array(d).fill(0);
+      for (let i = 0; i < G; i++) {
+        if (i === h) continue;
+        for (let a = 0; a < d; a++) {
+          bx[a] += pts[i].f[a] * pts[i].x;
+          by[a] += pts[i].f[a] * pts[i].y;
+          for (let b = 0; b < d; b++) A[a][b] += pts[i].f[a] * pts[i].f[b];
+        }
+      }
+      const meanDiag = A.reduce((sum, row, i) => sum + row[i], 0) / d;
+      let lam = 1e-4 * meanDiag, wx = null, wy = null;
+      for (let t = 0; t < 6 && !(wx && wy); t++) {
+        const M = A.map((row, i) => row.map((v, j) => (i === j ? v + lam : v)));
+        wx = solveLinear(M, bx); wy = solveLinear(M, by);
+        lam *= 10;
+      }
+      if (!wx || !wy) return null;
+      err += (this._dot(wx, pts[h].f) - pts[h].x) ** 2 + (this._dot(wy, pts[h].f) - pts[h].y) ** 2;
+    }
+    return Math.sqrt(err / G);
+  }
+
+  /** @returns {[number, number]|null} normalized screen point, or null. */
+  _krrPredict(f) {
+    const m = this.krr;
+    if (!m) return null;
+    const { Z, d, n, gamma, mean, std, ax, ay } = m;
+    const z = new Float64Array(d);
+    for (let k = 0; k < d; k++) z[k] = (f[k + 1] - mean[k]) / std[k];
+    let x = 0, y = 0;
+    for (let i = 0; i < n; i++) {
+      let acc = 0;
+      for (let k = 0; k < d; k++) { const e = z[k] - Z[i * d + k]; acc += e * e; }
+      const kv = Math.exp(-gamma * acc);
+      x += ax[i] * kv; y += ay[i] * kv;
+    }
+    return Number.isFinite(x) && Number.isFinite(y) ? [x, y] : null;
+  }
+
+  /** Record a calibration sample: the user is looking at page point (px, py). */
+  addCalibrationSample(px, py, cornerId) {
+    // blink-rejected, quality-weighted snapshot: median of recent good frames
+    const f = this._aggregate(0.5, 8);
+    if (!f) return false;
+    let q = 0, n = 0;
+    for (const rf of this.recentFeatures) if (rf.q >= 0.5) { q += rf.q; n++; }
+    const w = n ? q / n : 1; // sample weight = mean quality of its frames
+    this.samples.push({ f, x: px / window.innerWidth, y: py / window.innerHeight, w });
+    if (this.samples.length > 400) this.samples.shift(); // keep refinement bounded
+    if (cornerId && !this.meta.corners.includes(cornerId)) this.meta.corners.push(cornerId);
+    if (this.samples.length >= MIN_SAMPLES_TO_FIT) this._fit();
+    this._save();
+    return true;
+  }
+
+  _fit() {
+    const d = FEAT_DIM;
+    const A0 = Array.from({ length: d }, () => new Array(d).fill(0));
+    const bx = new Array(d).fill(0), by = new Array(d).fill(0);
+    for (const s of this.samples) {
+      const w = s.w == null ? 1 : s.w; // older saved samples carry no weight
+      for (let i = 0; i < d; i++) {
+        bx[i] += w * s.f[i] * s.x;
+        by[i] += w * s.f[i] * s.y;
+        for (let j = 0; j < d; j++) A0[i][j] += w * s.f[i] * s.f[j];
+      }
+    }
+    // ridge scaled to the matrix, escalating until the system solves cleanly
+    // (correlated eye features can make the unregularized system singular)
+    const meanDiag = A0.reduce((sum, row, i) => sum + row[i], 0) / d;
+    let lam = 1e-4 * meanDiag;
+    for (let tries = 0; tries < 6; tries++) {
+      const A = A0.map((row, i) => row.map((v, j) => (i === j ? v + lam : v)));
+      const wx = solveLinear(A, bx);
+      const wy = solveLinear(A, by);
+      if (wx && wy) {
+        this.wx = wx; this.wy = wy;
+        this._finalizeFit(A);
+        // The kernel model is an addition, never a replacement: the linear
+        // solution above stays live as the fallback and as the source of the
+        // per-prediction sigma the commit gate reads.
+        this.krr = this.model === "krr" ? this._krrFit() : null;
+        return;
+      }
+      lam *= 10;
+    }
+  }
+
+  /** Keep A⁻¹ and residual variance so every prediction carries its own σ. */
+  _finalizeFit(A) {
+    const d = FEAT_DIM;
+    // invert A column-by-column with the existing solver
+    const inv = [];
+    for (let c = 0; c < d; c++) {
+      const e = new Array(d).fill(0); e[c] = 1;
+      const col = solveLinear(A.map(r => [...r]), e);
+      if (!col) { this.Ainv = null; this.residVar = null; return; }
+      inv.push(col);
+    }
+    // transpose columns into rows (A is symmetric, but be explicit)
+    this.Ainv = Array.from({ length: d }, (_, i) => Array.from({ length: d }, (_, j) => inv[j][i]));
+    let ex = 0, ey = 0;
+    for (const s of this.samples) {
+      ex += (this._dot(this.wx, s.f) - s.x) ** 2;
+      ey += (this._dot(this.wy, s.f) - s.y) ** 2;
+    }
+    const n = Math.max(1, this.samples.length);
+    this.residVar = [Math.max(1e-6, ex / n), Math.max(1e-6, ey / n)];
+  }
+
+  _drawOverlay(lms) {
+    const ctx = this.overlay?.getContext("2d");
+    if (!ctx) return;
+    const W = this.overlay.width, H = this.overlay.height;
+    ctx.clearRect(0, 0, W, H);
+    if (!lms) return;
+    const dot = (i, color, r) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(lms[i].x * W, lms[i].y * H, r, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    for (const eye of [LEFT_EYE, RIGHT_EYE]) {
+      dot(eye.outer, "rgba(255,255,255,0.9)", 1.5);
+      dot(eye.inner, "rgba(255,255,255,0.9)", 1.5);
+      dot(eye.top, "rgba(255,255,255,0.7)", 1.5);
+      dot(eye.bottom, "rgba(255,255,255,0.7)", 1.5);
+      dot(eye.iris, "#00ff88", 3);
+    }
+    dot(NOSE, "rgba(0,180,255,0.9)", 2);
+  }
+}
+
+window.IrisTracker = IrisTracker;

@@ -1,0 +1,280 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  background: #fff;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+
+#banner {
+  display: none;
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 620px;
+  background: #b3261e;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 12px;
+  z-index: 200;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  pointer-events: none; /* must not swallow gaze dwell hit-testing under it */
+}
+#banner.info { background: #0a7cff; }
+
+.diag { font-size: 13px; color: #555; margin-top: 6px; display: flex; gap: 14px; flex-wrap: wrap; max-width: 240px; }
+
+header {
+  display: flex;
+  gap: 40px;
+  padding: 14px 224px 6px 24px; /* right side reserved for the fixed camera box */
+  align-items: flex-start;
+}
+
+.panel-title { font-weight: 700; font-size: 17px; margin-bottom: 8px; }
+
+.calib-links { line-height: 2; }
+
+button.calib, button.link {
+  background: none;
+  border: none;
+  font-size: 17px;
+  font-weight: 600;
+  color: #9a9a9a;
+  cursor: pointer;
+  padding: 2px 8px 2px 0;
+}
+button.calib.done, button.link { color: #0a7cff; }
+button.link { display: block; color: #00a8a8; margin-top: 10px; }
+label.toggle { font-size: 15px; color: #555; display: block; margin-top: 10px; cursor: pointer; }
+
+.gaze-pos { font-size: 17px; color: #333; }
+.status { margin-top: 10px; font-size: 13px; color: #888; max-width: 220px; }
+
+.label-wrap { flex: 1; text-align: center; }
+.label {
+  font-size: 34px;
+  font-weight: 600;
+  min-height: 46px;
+  color: #20222e;
+  letter-spacing: 0.5px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 16px;            /* spacing between words, no stray text nodes */
+}
+.label .tok-word { color: #20222e; }               /* decoded letters: clean & dark */
+.label .placeholder { color: #c7c7d2; font-weight: 500; }
+.label .current { color: #e0245e; }                /* the word being gazed right now */
+.label .current::after {                           /* soft caret marks the live word */
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 0.95em;
+  margin-left: 4px;
+  background: #e0245e;
+  transform: translateY(0.1em);
+  animation: caret-blink 1.05s steps(1) infinite;
+}
+@keyframes caret-blink { 50% { opacity: 0; } }
+/* word-suggestion chips: dwell or click to accept a word for the current group */
+#suggestions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  min-height: 62px;   /* reserved even when empty so keys never shift mid-gaze */
+  padding: 0 14px 6px;
+  flex-wrap: wrap;
+}
+.chip {
+  background: #fdf3dc;
+  color: #a76a10;
+  font-size: 22px;
+  font-weight: 700;
+  padding: 9px 24px;
+  border-radius: 22px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.chip.active { background: #eda446; color: #fff; }
+.chip.flash { background: #e18a1e; color: #fff; }
+
+/* uncertain-letter choices: the system asks instead of guessing */
+.chip.choice { background: #f7d488; color: #6b4408; font-size: 26px; padding: 10px 30px; }
+/* out-of-vocabulary corrections after a word is finished */
+.chip.fix { background: #fdf3dc; box-shadow: inset 0 0 0 2px #eda446; }
+.chip.fix.keep { box-shadow: none; color: #8a8a94; background: #f2f2f5; font-size: 18px; }
+
+/* Individual-letter QWERTY. Keys fill the viewport so each gaze target stays
+   as large as possible — the main lever for hit accuracy with small keys. */
+#keyboard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 12px 14px;
+}
+.krow {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.key {
+  flex: 1;
+  background: #f7d488;               /* subtle yellow, matching the ⌫ tan */
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  user-select: none;
+}
+.key span { font-size: 4.6vh; font-weight: 700; color: #8a5b16; }  /* warm brown: readable on yellow */
+.key.active { background: #eda446; }               /* orange = gaze is on this key */
+.key.flash { background: #e18a1e; }                /* deeper orange = committed */
+.key.active span, .key.flash span { color: #fff; }
+
+/* bottom row: a wide SPACE and a backspace, both big enough to dwell on */
+.krow-bottom .key-space { flex: 6; }
+.krow-bottom .key-space span { font-size: 3.4vh; letter-spacing: 4px; }
+.krow-bottom .key-back { flex: 2.5; background: #e8b585; }
+
+#cursor {
+  position: fixed;
+  width: 110px;
+  height: 110px;
+  margin: -55px 0 0 -55px;
+  pointer-events: none;
+  z-index: 50;
+  display: none;
+}
+#cursor::before, #cursor::after {
+  content: "";
+  position: absolute;
+  background: #e02020;
+}
+#cursor::before { left: 0; right: 0; top: 50%; height: 2px; }
+#cursor::after { top: 0; bottom: 0; left: 50%; width: 2px; }
+
+#dwell-ring {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: rgba(237, 164, 70, 0.3);
+  transform: scale(0);
+}
+#dwell-ring.filling { transform: scale(1); transition: transform 0.693s linear; }
+
+#calib-dot {
+  position: fixed;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e08040;
+  border: 4px solid #b85c1e;
+  z-index: 100;
+  display: none;
+  cursor: pointer;
+}
+#calib-dot::after {
+  content: attr(data-count);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* camera preview pinned to the top-right like the ARKit app; border turns
+   green when the face is tracked well. Must never block dwell hit-testing. */
+#camera-box {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 200px;
+  height: 150px;
+  z-index: 40;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 3px solid #d05050;
+  background: #000;
+  pointer-events: none;
+}
+#camera-box.ok { border-color: #2fbf71; }
+#camera-box video, #camera-box canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror both so the overlay stays aligned */
+}
+#face-hint {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 6px;
+  text-align: center;
+}
+
+/* Camera image controls, anchored above the preview.
+   The preview itself is pointer-events:none so it can never swallow a dwell;
+   only the gear and the panel opt back in. */
+#cam-gear {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 22px; height: 22px;
+  border: none; border-radius: 6px;
+  background: rgba(0,0,0,0.5); color: #fff;
+  font-size: 13px; line-height: 1; cursor: pointer;
+  pointer-events: auto;
+  display: flex; align-items: center; justify-content: center;
+}
+#cam-gear:hover { background: rgba(0,0,0,0.75); }
+#cam-settings {
+  position: fixed;
+  right: 12px; bottom: 170px;
+  width: 218px;
+  background: #fff;
+  border: 1px solid #dfe4e3;
+  border-radius: 12px;
+  padding: 12px 14px;
+  z-index: 70;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.16);
+  pointer-events: auto;
+}
+.cs-title { font-weight: 700; font-size: 13px; margin-bottom: 8px; color: #20222e; }
+.cs-toggle { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #555;
+             margin: 9px 0 4px; cursor: pointer; }
+.vslider { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; margin: 5px 0; }
+.vslider input[type=range] { flex: 1; min-width: 78px; }
+.vslider span { width: 38px; text-align: right; font-variant-numeric: tabular-nums; color: #888; }
+#vid-mode { font-size: 11.5px; color: #888; margin-top: 4px; line-height: 1.35; }
+#vid-mode.warn { color: #9a5713; }
+
+#raw-dot {
+  position: fixed;
+  width: 14px; height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: rgba(224,32,32,0.85);
+  z-index: 60;
+  display: none;
+  pointer-events: none;
+}

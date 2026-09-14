@@ -1,0 +1,193 @@
+{
+  "data_source": "recorded_human",
+  "n_sessions": 2,
+  "seeds": 5,
+  "sessions": {
+    "anon/Z_anon": {
+      "per_sample/ridge_linear": {
+        "holdout_rmse_px": 290.83101953711514,
+        "holdout_rmse_px_sd": 0.0,
+        "holdout_rmse_deg": 6.664673425435234,
+        "n_seeds": 1,
+        "holdout_keypitch": 1.818824976245136,
+        "by_region": {
+          "centre": 3.46,
+          "edge": 7.22,
+          "corner": 7.54
+        }
+      },
+      "per_sample/mlp_8": {
+        "holdout_rmse_px": 215.60172430865586,
+        "holdout_rmse_px_sd": 14.395878470188164,
+        "holdout_rmse_deg": 4.940721539142894,
+        "n_seeds": 5,
+        "holdout_keypitch": 1.1892193577827872,
+        "by_region": {
+          "centre": 1.77,
+          "edge": 7.07,
+          "corner": 5.16
+        }
+      },
+      "per_sample/mlp_16_8": {
+        "holdout_rmse_px": 250.64770589011567,
+        "holdout_rmse_px_sd": 17.456260070222527,
+        "holdout_rmse_deg": 5.743834021731567,
+        "n_seeds": 5,
+        "holdout_keypitch": 1.2825495284530657,
+        "by_region": {
+          "centre": 2.27,
+          "edge": 8.7,
+          "corner": 4.52
+        }
+      },
+      "per_sample/mlp_32_16": {
+        "holdout_rmse_px": 263.73555731565904,
+        "holdout_rmse_px_sd": 11.35145717169509,
+        "holdout_rmse_deg": 6.043754765160836,
+        "n_seeds": 5,
+        "holdout_keypitch": 1.289629839789147,
+        "by_region": {
+          "centre": 3.03,
+          "edge": 8.71,
+          "corner": 4.66
+        }
+      },
+      "per_sample/krr_rbf": {
+        "holdout_rmse_px": 211.6291560551478,
+        "holdout_rmse_px_sd": 2.842170943040401e-14,
+        "holdout_rmse_deg": 4.849686304620725,
+        "n_seeds": 5,
+        "holdout_keypitch": 1.1903242839296555,
+        "by_region": {
+          "centre": 2.5,
+          "edge": 6.02,
+          "corner": 5.08
+        }
+      },
+      "per_sample/poly2_ridge": {
+        "holdout_rmse_px": 302.67698860366323,
+        "holdout_rmse_px_sd": 0.0,
+        "holdout_rmse_deg": 6.936135236359002,
+        "n_seeds": 5,
+        "holdout_keypitch": 1.700265314096812,
+        "by_region": {
+          "centre": 3.53,
+          "edge": 9.59,
+          "corner": 6.64
+        }
+      },
+      "per_sample/poly3_ridge": {
+        "holdout_rmse_px": 387.660530883745,
+        "holdout_rmse_px_sd": 0.0,
+        "holdout_rmse_deg": 8.88361510537322,
+        "n_seeds": 5,
+        "holdout_keypitch": 2.0855053730981994,
+        "by_region": {
+          "centre": 4.2,
+          "edge": 10.93,
+          "corner": 9.46
+        }
+      },
+      "per_target/ridge_linear": {
+        "holdout_rmse_px": 290.270890579844,
+        "holdout_rmse_px_sd": 0.0,
+        "holdout_rmse_deg": 6.651837529930403,
+        "n_seeds": 1,
+        "holdout_keypitch": 1.7999962286425053,
+        "by_region": {
+          "centre": 3.39,
+          "edge": 7.01,
+          "corner": 7.64
+        }
+      },
+      "per_target/mlp_8": {
+        "holdout_rmse_px": 405.32290308668996,
+        "holdout_rmse_px_sd": 21.651427955093663,
+        "holdout_rmse_deg": 9.288365406212746,
+        "n_seeds": 5,
+        "holdout_keypitch": 2.4799865227710685,
+        "by_region": {
+          "centre": 5.78,
+          "edge": 10.9,
+          "corner": 10.94
+        }
+      },
+      "per_target/mlp_16_8": {
+        "holdout_rmse_px": 197.4720917469064,
+        "holdout_rmse_px_sd": 8.112126295081953,
+        "holdout_rmse_deg": 4.525263516338082,
+        "n_seeds": 5,
+        "holdout_keypitch": 1.0780356264790758,
+        "by_region": {
+          "centre": 2.79,
+          "edge": 4.26,
+          "corner": 4.65
+        }
+      },
+      "per_target/mlp_32_16": {
+        "holdout_rmse_px": 209.92136055640148,
+        "holdout_rmse_px_sd": 9.22198772692613,
+        "holdout_rmse_deg": 4.810550522974435,
+        "n_seeds": 5,
+        "holdout_keypitch": 1.1761190370788115,
+        "by_region": {
+          "centre": 3.52,
+          "edge": 4.2,
+          "corner": 5.67
+        }
+      },
+      "per_target/krr_rbf": {
+        "holdout_rmse_px": 247.76528564379223,
+        "holdout_rmse_px_sd": 0.0,
+        "holdout_rmse_deg": 5.677780580639956,
+        "n_seeds": 5,
+        "holdout_keypitch": 1.4814219376717228,
+        "by_region": {
+          "centre": 2.61,
+          "edge": 6.63,
+          "corner": 6.26
+        }
+      },
+      "per_target/poly2_ridge": {
+        "holdout_rmse_px": 480.6088182530137,
+        "holdout_rmse_px_sd": 0.0,
+        "holdout_rmse_deg": 11.013614793011861,
+        "n_seeds": 5,
+        "holdout_keypitch": 2.791870698491639,
+        "by_region": {
+          "centre": 6.89,
+          "edge": 8.82,
+          "corner": 13.43
+        }
+      },
+      "per_target/poly3_ridge": {
+        "holdout_rmse_px": 614.4975065659326,
+        "holdout_rmse_px_sd": 0.0,
+        "holdout_rmse_deg": 14.081803270244134,
+        "n_seeds": 5,
+        "holdout_keypitch": 3.5712467095326312,
+        "by_region": {
+          "centre": 11.68,
+          "edge": 15.06,
+          "corner": 14.67
+        }
+      }
+    }
+  },
+  "pooled": {
+    "per_sample/krr_rbf": 173.5741759148556,
+    "per_target/krr_rbf": 196.54975001843462,
+    "per_sample/mlp_32_16": 208.3319100919847,
+    "per_target/ridge_linear": 223.68930277466893,
+    "per_sample/mlp_16_8": 212.4058348979924,
+    "per_sample/ridge_linear": 235.3082720419264,
+    "per_sample/mlp_8": 222.4911494951169,
+    "per_sample/poly2_ridge": 294.87659311480814,
+    "per_target/mlp_16_8": 242.5362753334146,
+    "per_target/mlp_32_16": 251.15931970849647,
+    "per_target/mlp_8": 383.8503678990494,
+    "per_sample/poly3_ridge": 419.3718720805822,
+    "per_target/poly3_ridge": 569.3862798683433,
+    "per_target/poly2_ridge": 556.9303430198764
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "rows": [
+    {
+      "noise": 0.02,
+      "n_test": 400,
+      "geometric_deployed": 0.9375,
+      "qknn_only": 0.7275,
+      "qsvm_only": 0.275,
+      "qhier_only": 0.395,
+      "weighted_fusion": 0.9375,
+      "full_stack_qaoa": 0.9375,
+      "classical_mlp": 0.9125,
+      "classical_rbf_svm": 0.8525,
+      "qaoa_matched_exact": 1.0,
+      "fraction_channel_dropped": 1.0,
+      "stack_ms_per_fixation": 68.42727562499931,
+      "gain_vs_deployed_pp": 0.0
+    },
+    {
+      "noise": 0.03,
+      "n_test": 400,
+      "geometric_deployed": 0.855,
+      "qknn_only": 0.6625,
+      "qsvm_only": 0.26,
+      "qhier_only": 0.375,
+      "weighted_fusion": 0.855,
+      "full_stack_qaoa": 0.855,
+      "classical_mlp": 0.82,
+      "classical_rbf_svm": 0.7625,
+      "qaoa_matched_exact": 1.0,
+      "fraction_channel_dropped": 1.0,
+      "stack_ms_per_fixation": 70.02531770749556,
+      "gain_vs_deployed_pp": 0.0
+    },
+    {
+      "noise": 0.045,
+      "n_test": 400,
+      "geometric_deployed": 0.68,
+      "qknn_only": 0.565,
+      "qsvm_only": 0.24,
+      "qhier_only": 0.3525,
+      "weighted_fusion": 0.68,
+      "full_stack_qaoa": 0.68,
+      "classical_mlp": 0.6675,
+      "classical_rbf_svm": 0.625,
+      "qaoa_matched_exact": 1.0,
+      "fraction_channel_dropped": 1.0,
+      "stack_ms_per_fixation": 71.02097801999662,
+      "gain_vs_deployed_pp": 0.0
+    }
+  ],
+  "selected_features": [
+    "iris_x",
+    "iris_y",
+    "yaw",
+    "pitch"
+  ],
+  "commit_quality": {
+    "noise_0.020": [
+      {
+        "rule": "ungated",
+        "commit_rate": 0.7333333333333333,
+        "accuracy_when_committed": 0.8272727272727273,
+        "wrong_commits_per_100": 12.666666666666666,
+        "prompt_rate": 0.2666666666666667
+      },
+      {
+        "rule": "qsvm_gate",
+        "commit_rate": 0.576,
+        "accuracy_when_committed": 0.9918981481481481,
+        "wrong_commits_per_100": 0.4666666666666667,
+        "prompt_rate": 0.42400000000000004
+      },
+      {
+        "rule": "qnn_qbn",
+        "commit_rate": 0.6786666666666666,
+        "accuracy_when_committed": 0.8595284872298625,
+        "wrong_commits_per_100": 9.533333333333333,
+        "prompt_rate": 0.32133333333333336
+      },
+      {
+        "rule": "qnn_qbn + qsvm_gate",
+        "commit_rate": 0.556,
+        "accuracy_when_committed": 0.9940047961630696,
+        "wrong_commits_per_100": 0.3333333333333333,
+        "prompt_rate": 0.44399999999999995
+      }
+    ],
+    "noise_0.030": [
+      {
+        "rule": "ungated",
+        "commit_rate": 0.67,
+        "accuracy_when_committed": 0.7582089552238805,
+        "wrong_commits_per_100": 16.2,
+        "prompt_rate": 0.32999999999999996
+      },
+      {
+        "rule": "qsvm_gate",
+        "commit_rate": 0.5193333333333333,
+        "accuracy_when_committed": 0.9139922978177151,
+        "wrong_commits_per_100": 4.466666666666667,
+        "prompt_rate": 0.4806666666666667
+      },
+      {
+        "rule": "qnn_qbn",
+        "commit_rate": 0.6133333333333333,
+        "accuracy_when_committed": 0.7913043478260869,
+        "wrong_commits_per_100": 12.8,
+        "prompt_rate": 0.3866666666666667
+      },
+      {
+        "rule": "qnn_qbn + qsvm_gate",
+        "commit_rate": 0.49066666666666664,
+        "accuracy_when_committed": 0.9293478260869565,
+        "wrong_commits_per_100": 3.466666666666667,
+        "prompt_rate": 0.5093333333333334
+      }
+    ]
+  },
+  "calibration_residual": [
+    {
+      "noise": 0.015,
+      "n_calibration_samples": 35,
+      "deployed_accuracy": 0.98125,
+      "corrected_accuracy": 0.98125,
+      "gain_pp": 0.0,
+      "deployed_rmse": 0.018836470823887896,
+      "corrected_rmse": 0.018851067760053387,
+      "rmse_reduction_pct": -0.07749294600865042,
+      "chosen_lambda": 100.0,
+      "loo_rmse": 0.017104187403105674
+    },
+    {
+      "noise": 0.02,
+      "n_calibration_samples": 35,
+      "deployed_accuracy": 0.93375,
+      "corrected_accuracy": 0.93375,
+      "gain_pp": 0.0,
+      "deployed_rmse": 0.024130917227024335,
+      "corrected_rmse": 0.02415305151697876,
+      "rmse_reduction_pct": -0.09172585420680335,
+      "chosen_lambda": 100.0,
+      "loo_rmse": 0.022728702637645558
+    },
+    {
+      "noise": 0.03,
+      "n_calibration_samples": 35,
+      "deployed_accuracy": 0.83875,
+      "corrected_accuracy": 0.84,
+      "gain_pp": 0.12499999999999734,
+      "deployed_rmse": 0.03506817438716394,
+      "corrected_rmse": 0.035106376365278184,
+      "rmse_reduction_pct": -0.10893631841932816,
+      "chosen_lambda": 100.0,
+      "loo_rmse": 0.03393827727273232
+    },
+    {
+      "noise": 0.045,
+      "n_calibration_samples": 35,
+      "deployed_accuracy": 0.66625,
+      "corrected_accuracy": 0.6675,
+      "gain_pp": 0.12499999999999734,
+      "deployed_rmse": 0.051581918990759916,
+      "corrected_rmse": 0.051647642938458485,
+      "rmse_reduction_pct": -0.12741663936610692,
+      "chosen_lambda": 100.0,
+      "loo_rmse": 0.050575838580203196
+    }
+  ]
+}

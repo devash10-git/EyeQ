@@ -1,0 +1,300 @@
+{
+  "c2": [
+    {
+      "cluster": "1",
+      "n_marked": 3,
+      "members": "eqw",
+      "name": "Grover (iterations 1..4)",
+      "found": "10110",
+      "correct": true,
+      "sec": 0.008134841918945312
+    },
+    {
+      "cluster": "1",
+      "n_marked": 3,
+      "name": "classical exhaustive scan",
+      "found": "e",
+      "correct": true,
+      "sec": 6.992101669311524e-07,
+      "microseconds": 0.6992101669311523
+    },
+    {
+      "cluster": "5",
+      "n_marked": 3,
+      "members": "fgh",
+      "name": "Grover (iterations 1..4)",
+      "found": "00101",
+      "correct": true,
+      "sec": 0.009598016738891602
+    },
+    {
+      "cluster": "5",
+      "n_marked": 3,
+      "name": "classical exhaustive scan",
+      "found": "f",
+      "correct": true,
+      "sec": 6.779909133911133e-07,
+      "microseconds": 0.6779909133911133
+    },
+    {
+      "cluster": "9",
+      "n_marked": 3,
+      "members": "bmn",
+      "name": "Grover (iterations 1..4)",
+      "found": "00001",
+      "correct": true,
+      "sec": 0.0076138973236083984
+    },
+    {
+      "cluster": "9",
+      "n_marked": 3,
+      "name": "classical exhaustive scan",
+      "found": "b",
+      "correct": true,
+      "sec": 6.834983825683594e-07,
+      "microseconds": 0.6834983825683594
+    }
+  ],
+  "c1": [
+    {
+      "case": "P(mis_key=1)",
+      "name": "AmplitudeEstimation (m=6)",
+      "truth": 0.10778528000000001,
+      "estimate": 0.1134948,
+      "abs_err": 0.005709519999999996,
+      "rel_err": 0.05297124059982954,
+      "sec": 1.891982078552246,
+      "exact_1000x_sec": 0.049440860748291016
+    },
+    {
+      "case": "P(mis_key=1)",
+      "name": "AmplitudeEstimation (m=8)",
+      "truth": 0.10778528000000001,
+      "estimate": 0.1058268,
+      "abs_err": 0.0019584800000000124,
+      "rel_err": 0.018170199121809696,
+      "sec": 9.287038803100586,
+      "exact_1000x_sec": 0.049440860748291016
+    },
+    {
+      "case": "P(mis_key=1)",
+      "name": "IterativeAmplitudeEstimation (eps=0.01)",
+      "truth": 0.10778528000000001,
+      "estimate": 0.1077918339341366,
+      "abs_err": 6.553934136593886e-06,
+      "rel_err": 6.080546561268743e-05,
+      "sec": 0.08384513854980469,
+      "exact_1000x_sec": 0.049440860748291016
+    },
+    {
+      "case": "P(mis_key=1)",
+      "name": "IterativeAmplitudeEstimation (eps=0.001)",
+      "truth": 0.10778528000000001,
+      "estimate": 0.10779191694253877,
+      "abs_err": 6.6369425387596825e-06,
+      "rel_err": 6.157559305648862e-05,
+      "sec": 0.08005785942077637,
+      "exact_1000x_sec": 0.049440860748291016
+    },
+    {
+      "case": "P(mis_key=1)",
+      "name": "MaximumLikelihoodAmplitudeEstimation (k=5)",
+      "truth": 0.10778528000000001,
+      "estimate": 0.10757566719175801,
+      "abs_err": 0.00020961280824199902,
+      "rel_err": 0.0019447257384496194,
+      "sec": 1.3219709396362305,
+      "exact_1000x_sec": 0.049440860748291016
+    },
+    {
+      "case": "P(mis_key=1)",
+      "name": "FasterAmplitudeEstimation (delta=0.01)",
+      "truth": 0.10778528000000001,
+      "estimate": 0.10820526323102501,
+      "abs_err": 0.00041998323102500346,
+      "rel_err": 0.003896480400895219,
+      "sec": 0.7821319103240967,
+      "exact_1000x_sec": 0.049440860748291016
+    },
+    {
+      "case": "P(blink=1)",
+      "name": "AmplitudeEstimation (m=6)",
+      "truth": 0.060000000000000005,
+      "estimate": 0.0590394,
+      "abs_err": 0.0009606000000000059,
+      "rel_err": 0.016010000000000097,
+      "sec": 2.222465991973877,
+      "exact_1000x_sec": 0.053093910217285156
+    },
+    {
+      "case": "P(blink=1)",
+      "name": "AmplitudeEstimation (m=8)",
+      "truth": 0.060000000000000005,
+      "estimate": 0.0590394,
+      "abs_err": 0.0009606000000000059,
+      "rel_err": 0.016010000000000097,
+      "sec": 9.988356828689575,
+      "exact_1000x_sec": 0.053093910217285156
+    },
+    {
+      "case": "P(blink=1)",
+      "name": "IterativeAmplitudeEstimation (eps=0.01)",
+      "truth": 0.060000000000000005,
+      "estimate": 0.0600566032288818,
+      "abs_err": 5.660322888179775e-05,
+      "rel_err": 0.0009433871480299625,
+      "sec": 0.1004478931427002,
+      "exact_1000x_sec": 0.053093910217285156
+    },
+    {
+      "case": "P(blink=1)",
+      "name": "IterativeAmplitudeEstimation (eps=0.001)",
+      "truth": 0.060000000000000005,
+      "estimate": 0.060023185804722434,
+      "abs_err": 2.3185804722429537e-05,
+      "rel_err": 0.0003864300787071589,
+      "sec": 0.09184885025024414,
+      "exact_1000x_sec": 0.053093910217285156
+    },
+    {
+      "case": "P(blink=1)",
+      "name": "MaximumLikelihoodAmplitudeEstimation (k=5)",
+      "truth": 0.060000000000000005,
+      "estimate": 0.060057912045594165,
+      "abs_err": 5.791204559416063e-05,
+      "rel_err": 0.0009652007599026772,
+      "sec": 1.3270459175109863,
+      "exact_1000x_sec": 0.053093910217285156
+    },
+    {
+      "case": "P(blink=1)",
+      "name": "FasterAmplitudeEstimation (delta=0.01)",
+      "truth": 0.060000000000000005,
+      "estimate": 0.05965711719138094,
+      "abs_err": 0.0003428828086190633,
+      "rel_err": 0.0057147134769843875,
+      "sec": 0.7127130031585693,
+      "exact_1000x_sec": 0.053093910217285156
+    },
+    {
+      "case": "P(eye_closed=1, mis_key=1)",
+      "name": "AmplitudeEstimation (m=6)",
+      "truth": 0.023083230400000005,
+      "estimate": 0.0215298,
+      "abs_err": 0.0015534304000000033,
+      "rel_err": 0.06729692391754678,
+      "sec": 2.370723247528076,
+      "exact_1000x_sec": 0.0496828556060791
+    },
+    {
+      "case": "P(eye_closed=1, mis_key=1)",
+      "name": "AmplitudeEstimation (m=8)",
+      "truth": 0.023083230400000005,
+      "estimate": 0.0215298,
+      "abs_err": 0.0015534304000000033,
+      "rel_err": 0.06729692391754678,
+      "sec": 10.596884965896606,
+      "exact_1000x_sec": 0.0496828556060791
+    },
+    {
+      "case": "P(eye_closed=1, mis_key=1)",
+      "name": "IterativeAmplitudeEstimation (eps=0.01)",
+      "truth": 0.023083230400000005,
+      "estimate": 0.02304342461252537,
+      "abs_err": 3.980578747463451e-05,
+      "rel_err": 0.0017244461362147345,
+      "sec": 0.07888197898864746,
+      "exact_1000x_sec": 0.0496828556060791
+    },
+    {
+      "case": "P(eye_closed=1, mis_key=1)",
+      "name": "IterativeAmplitudeEstimation (eps=0.001)",
+      "truth": 0.023083230400000005,
+      "estimate": 0.02304342300885205,
+      "abs_err": 3.980739114795365e-05,
+      "rel_err": 0.0017245156097369127,
+      "sec": 0.07775998115539551,
+      "exact_1000x_sec": 0.0496828556060791
+    },
+    {
+      "case": "P(eye_closed=1, mis_key=1)",
+      "name": "MaximumLikelihoodAmplitudeEstimation (k=5)",
+      "truth": 0.023083230400000005,
+      "estimate": 0.023101559279765746,
+      "abs_err": 1.8328879765740907e-05,
+      "rel_err": 0.000794034433141598,
+      "sec": 1.3293068408966064,
+      "exact_1000x_sec": 0.0496828556060791
+    },
+    {
+      "case": "P(eye_closed=1, mis_key=1)",
+      "name": "FasterAmplitudeEstimation (delta=0.01)",
+      "truth": 0.023083230400000005,
+      "estimate": 0.023107631617074503,
+      "abs_err": 2.440121707449755e-05,
+      "rel_err": 0.0010570971502540452,
+      "sec": 0.986069917678833,
+      "exact_1000x_sec": 0.0496828556060791
+    },
+    {
+      "case": "P(blink=1, saccade=1, mis_key=1)  [rare evidence]",
+      "name": "AmplitudeEstimation (m=6)",
+      "truth": 0.004596479999999999,
+      "estimate": 0.0024076,
+      "abs_err": 0.002188879999999999,
+      "rel_err": 0.47620788081314386,
+      "sec": 2.2520430088043213,
+      "exact_1000x_sec": 0.05031418800354004
+    },
+    {
+      "case": "P(blink=1, saccade=1, mis_key=1)  [rare evidence]",
+      "name": "AmplitudeEstimation (m=8)",
+      "truth": 0.004596479999999999,
+      "estimate": 0.0054117,
+      "abs_err": 0.000815220000000001,
+      "rel_err": 0.17735745614035114,
+      "sec": 9.665801048278809,
+      "exact_1000x_sec": 0.05031418800354004
+    },
+    {
+      "case": "P(blink=1, saccade=1, mis_key=1)  [rare evidence]",
+      "name": "IterativeAmplitudeEstimation (eps=0.01)",
+      "truth": 0.004596479999999999,
+      "estimate": 0.004598316127519165,
+      "abs_err": 1.836127519166085e-06,
+      "rel_err": 0.0003994638330126717,
+      "sec": 0.07560992240905762,
+      "exact_1000x_sec": 0.05031418800354004
+    },
+    {
+      "case": "P(blink=1, saccade=1, mis_key=1)  [rare evidence]",
+      "name": "IterativeAmplitudeEstimation (eps=0.001)",
+      "truth": 0.004596479999999999,
+      "estimate": 0.004580401514306745,
+      "abs_err": 1.6078485693253944e-05,
+      "rel_err": 0.003497999707004914,
+      "sec": 0.0739891529083252,
+      "exact_1000x_sec": 0.05031418800354004
+    },
+    {
+      "case": "P(blink=1, saccade=1, mis_key=1)  [rare evidence]",
+      "name": "MaximumLikelihoodAmplitudeEstimation (k=5)",
+      "truth": 0.004596479999999999,
+      "estimate": 0.004627431646326972,
+      "abs_err": 3.095164632697326e-05,
+      "rel_err": 0.006733771565844574,
+      "sec": 1.2027039527893066,
+      "exact_1000x_sec": 0.05031418800354004
+    },
+    {
+      "case": "P(blink=1, saccade=1, mis_key=1)  [rare evidence]",
+      "name": "FasterAmplitudeEstimation (delta=0.01)",
+      "truth": 0.004596479999999999,
+      "estimate": 0.004614657467707903,
+      "abs_err": 1.8177467707903953e-05,
+      "rel_err": 0.00395464958139793,
+      "sec": 0.3891909122467041,
+      "exact_1000x_sec": 0.05031418800354004
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eye Gaze Keyboard</title>
+  <link rel="stylesheet" href="/static/style.css?v=15">
+</head>
+<body>
+  <div id="banner"></div>
+  <header>
+    <div class="panel">
+      <div class="panel-title">Calibrate</div>
+      <div class="calib-links">
+        <button class="calib" id="calib-TL" data-corner="TL">TL</button>
+        <button class="calib" id="calib-TR" data-corner="TR">TR</button>
+        <br>
+        <button class="calib" id="calib-ML" data-corner="ML">L</button>
+        <button class="calib" id="calib-C"  data-corner="C">C</button>
+        <button class="calib" id="calib-MR" data-corner="MR">R</button>
+        <br>
+        <button class="calib" id="calib-BL" data-corner="BL">BL</button>
+        <button class="calib" id="calib-BR" data-corner="BR">BR</button>
+      </div>
+      <button class="link" id="reset-calib">Reset calibration</button>
+      <button class="link" id="undo-btn">Undo</button>
+      <button class="link" id="clear-btn">Clear</button>
+      <label class="link toggle"><input type="checkbox" id="mouse-mode"> Mouse mode</label>
+      <label class="link toggle"><input type="checkbox" id="show-dot"> Show raw gaze dot</label>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Eyes gazing position</div>
+      <div class="gaze-pos"><span id="gaze-x">x: –</span>&nbsp;&nbsp;<span id="gaze-y">y: –</span></div>
+      <div class="status" id="status">loading gaze tracker…</div>
+      <div class="diag">
+        <span id="diag-camera">camera: starting</span>
+        <span id="diag-pred">gaze samples: 0</span>
+        <span id="diag-calib">calibration: 0/7</span>
+      </div>
+    </div>
+
+    <div class="label-wrap">
+      <div class="label" id="label">Label</div>
+    </div>
+  </header>
+
+  <div id="suggestions"></div>
+
+  <main id="keyboard">
+    <div class="krow">
+      <div class="key" data-letter="q"><span>Q</span></div>
+      <div class="key" data-letter="w"><span>W</span></div>
+      <div class="key" data-letter="e"><span>E</span></div>
+      <div class="key" data-letter="r"><span>R</span></div>
+      <div class="key" data-letter="t"><span>T</span></div>
+      <div class="key" data-letter="y"><span>Y</span></div>
+      <div class="key" data-letter="u"><span>U</span></div>
+      <div class="key" data-letter="i"><span>I</span></div>
+      <div class="key" data-letter="o"><span>O</span></div>
+      <div class="key" data-letter="p"><span>P</span></div>
+    </div>
+    <div class="krow">
+      <div class="key" data-letter="a"><span>A</span></div>
+      <div class="key" data-letter="s"><span>S</span></div>
+      <div class="key" data-letter="d"><span>D</span></div>
+      <div class="key" data-letter="f"><span>F</span></div>
+      <div class="key" data-letter="g"><span>G</span></div>
+      <div class="key" data-letter="h"><span>H</span></div>
+      <div class="key" data-letter="j"><span>J</span></div>
+      <div class="key" data-letter="k"><span>K</span></div>
+      <div class="key" data-letter="l"><span>L</span></div>
+    </div>
+    <div class="krow">
+      <div class="key" data-letter="z"><span>Z</span></div>
+      <div class="key" data-letter="x"><span>X</span></div>
+      <div class="key" data-letter="c"><span>C</span></div>
+      <div class="key" data-letter="v"><span>V</span></div>
+      <div class="key" data-letter="b"><span>B</span></div>
+      <div class="key" data-letter="n"><span>N</span></div>
+      <div class="key" data-letter="m"><span>M</span></div>
+    </div>
+    <div class="krow krow-bottom">
+      <div class="key key-space" data-action="space"><span>SPACE</span></div>
+      <div class="key key-back" data-action="backspace"><span>⌫</span></div>
+    </div>
+  </main>
+
+  <div id="cursor"><div id="dwell-ring"></div></div>
+  <div id="calib-dot"></div>
+  <div id="raw-dot"></div>
+
+  <div id="camera-box">
+    <video id="cam" autoplay playsinline muted></video>
+    <canvas id="cam-overlay" width="200" height="150"></canvas>
+    <div id="face-hint">camera starting…</div>
+  </div>
+
+  <script src="/static/iris-tracker.js?v=14" defer></script>
+  <script src="/static/app.js?v=22" defer></script>
+</body>
+</html>

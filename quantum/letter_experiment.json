@@ -1,0 +1,373 @@
+{
+  "loop": [
+    {
+      "version": "V1  VQC \u00b7 raw features",
+      "verdict": "ACCEPT",
+      "reason": "first version establishes the baseline",
+      "accuracy": 0.1125,
+      "robustness": 0.1219,
+      "interpretability": 0.0,
+      "nll": 2.8436,
+      "ece": 0.0087
+    },
+    {
+      "version": "V2  VQC \u00b7 calibrated",
+      "verdict": "ACCEPT",
+      "reason": "improves accuracy, robustness",
+      "accuracy": 0.1583,
+      "robustness": 0.1385,
+      "interpretability": 0.0,
+      "nll": 2.7308,
+      "ece": 0.0483
+    },
+    {
+      "version": "V3  QNN \u00b7 data re-uploading",
+      "verdict": "REJECT",
+      "reason": "decreases accuracy, robustness",
+      "accuracy": 0.0583,
+      "robustness": 0.1115,
+      "interpretability": 0.0,
+      "nll": 2.8298,
+      "ece": 0.0829
+    },
+    {
+      "version": "V4  QSVM \u00b7 fidelity kernel",
+      "verdict": "ACCEPT",
+      "reason": "improves accuracy, robustness",
+      "accuracy": 0.5958,
+      "robustness": 0.5583,
+      "interpretability": 0.0,
+      "nll": 1.1124,
+      "ece": 0.0559
+    },
+    {
+      "version": "V5  Quantum-kernel density",
+      "verdict": "REJECT",
+      "reason": "decreases accuracy, robustness",
+      "accuracy": 0.4125,
+      "robustness": 0.3844,
+      "interpretability": 1.0,
+      "nll": 1.5998,
+      "ece": 0.0451
+    },
+    {
+      "version": "V6  QBN \u00b7 factorised row/slot",
+      "verdict": "ACCEPT",
+      "reason": "improves accuracy, robustness, interpretability",
+      "accuracy": 0.6708,
+      "robustness": 0.6344,
+      "interpretability": 1.0,
+      "nll": 1.117,
+      "ece": 0.1917
+    },
+    {
+      "version": "V7  QBN \u00b7 finer x-resolution",
+      "verdict": "REJECT",
+      "reason": "decreases accuracy, robustness",
+      "accuracy": 0.6542,
+      "robustness": 0.6115,
+      "interpretability": 1.0,
+      "nll": 1.2686,
+      "ece": 0.2396
+    }
+  ],
+  "results": [
+    {
+      "name": "V1  VQC \u00b7 raw features",
+      "note": "naive: model must learn the gaze map itself",
+      "interpretable": false,
+      "fit_s": 67.1,
+      "clean": {
+        "acc": 0.1125,
+        "top3": 0.3375,
+        "nll": 2.8436427311714567,
+        "ece": 0.008655721537755401
+      },
+      "noisy_030": {
+        "acc": 0.14583333333333334,
+        "top3": 0.3375,
+        "nll": 2.8623403874240694,
+        "ece": 0.02581088993513945
+      },
+      "noisy_045": {
+        "acc": 0.15,
+        "top3": 0.3,
+        "nll": 2.858752280412842,
+        "ece": 0.030379237656466693
+      },
+      "drift": {
+        "acc": 0.07083333333333333,
+        "top3": 0.29583333333333334,
+        "nll": 2.936572113133263,
+        "ece": 0.053085674790399065
+      },
+      "xuser": {
+        "acc": 0.12083333333333333,
+        "top3": 0.35,
+        "nll": 2.789672870597653,
+        "ece": 0.00821209505674693
+      },
+      "predict_ms": 2.89
+    },
+    {
+      "name": "V2  VQC \u00b7 calibrated",
+      "note": "representation fix: model sees the solved point",
+      "interpretable": false,
+      "fit_s": 67.6,
+      "clean": {
+        "acc": 0.15833333333333333,
+        "top3": 0.4,
+        "nll": 2.730777979880481,
+        "ece": 0.04829576902564223
+      },
+      "noisy_030": {
+        "acc": 0.14166666666666666,
+        "top3": 0.35833333333333334,
+        "nll": 2.7625400559420195,
+        "ece": 0.03195445591360896
+      },
+      "noisy_045": {
+        "acc": 0.15416666666666667,
+        "top3": 0.37083333333333335,
+        "nll": 2.7447391881777965,
+        "ece": 0.042626480204837745
+      },
+      "drift": {
+        "acc": 0.1375,
+        "top3": 0.3375,
+        "nll": 2.8160870627537014,
+        "ece": 0.034706605863144904
+      },
+      "xuser": {
+        "acc": 0.12083333333333333,
+        "top3": 0.35833333333333334,
+        "nll": 2.7645971487290453,
+        "ece": 0.014185811063869899
+      },
+      "predict_ms": 2.905
+    },
+    {
+      "name": "V3  QNN \u00b7 data re-uploading",
+      "note": "more expressivity at equal qubit count",
+      "interpretable": false,
+      "fit_s": 73.8,
+      "clean": {
+        "acc": 0.058333333333333334,
+        "top3": 0.2875,
+        "nll": 2.829783634468967,
+        "ece": 0.08292703904037514
+      },
+      "noisy_030": {
+        "acc": 0.09166666666666666,
+        "top3": 0.32083333333333336,
+        "nll": 2.7871920112981985,
+        "ece": 0.04652283981421148
+      },
+      "noisy_045": {
+        "acc": 0.10416666666666667,
+        "top3": 0.2875,
+        "nll": 2.7977013613908808,
+        "ece": 0.037580873746440514
+      },
+      "drift": {
+        "acc": 0.09583333333333334,
+        "top3": 0.2875,
+        "nll": 2.9584996285254124,
+        "ece": 0.04507648531858365
+      },
+      "xuser": {
+        "acc": 0.15416666666666667,
+        "top3": 0.375,
+        "nll": 2.710688485997886,
+        "ece": 0.0321137780414832
+      },
+      "predict_ms": 3.394
+    },
+    {
+      "name": "V4  QSVM \u00b7 fidelity kernel",
+      "note": "26-way OvR, temperature-calibrated margins",
+      "interpretable": false,
+      "fit_s": 31.5,
+      "clean": {
+        "acc": 0.5958333333333333,
+        "top3": 0.9333333333333333,
+        "nll": 1.1124386584971409,
+        "ece": 0.05592883373044121
+      },
+      "noisy_030": {
+        "acc": 0.6041666666666666,
+        "top3": 0.9,
+        "nll": 1.2402293860354199,
+        "ece": 0.06420108082619869
+      },
+      "noisy_045": {
+        "acc": 0.4666666666666667,
+        "top3": 0.9,
+        "nll": 1.3539925707001974,
+        "ece": 0.174529674903068
+      },
+      "drift": {
+        "acc": 0.5666666666666667,
+        "top3": 0.8958333333333334,
+        "nll": 1.2283788213321012,
+        "ece": 0.07215952528982998
+      },
+      "xuser": {
+        "acc": 0.5958333333333333,
+        "top3": 0.9333333333333333,
+        "nll": 1.140196735322563,
+        "ece": 0.048022400923736976
+      },
+      "predict_ms": 107.743
+    },
+    {
+      "name": "V5  Quantum-kernel density",
+      "note": "non-parametric, traceable to exemplars",
+      "interpretable": true,
+      "fit_s": 17.2,
+      "clean": {
+        "acc": 0.4125,
+        "top3": 0.7875,
+        "nll": 1.599846091523985,
+        "ece": 0.045091422215705765
+      },
+      "noisy_030": {
+        "acc": 0.43333333333333335,
+        "top3": 0.7791666666666667,
+        "nll": 1.5970957193776125,
+        "ece": 0.06957490704050853
+      },
+      "noisy_045": {
+        "acc": 0.3541666666666667,
+        "top3": 0.7791666666666667,
+        "nll": 1.696012906753041,
+        "ece": 0.052020089722195524
+      },
+      "drift": {
+        "acc": 0.3333333333333333,
+        "top3": 0.7416666666666667,
+        "nll": 1.7102511596754708,
+        "ece": 0.08383348793087762
+      },
+      "xuser": {
+        "acc": 0.4166666666666667,
+        "top3": 0.7958333333333333,
+        "nll": 1.6131108238616259,
+        "ece": 0.1112230303285832
+      },
+      "predict_ms": 107.397
+    },
+    {
+      "name": "V6  QBN \u00b7 factorised row/slot",
+      "note": "keyboard structure as inductive bias",
+      "interpretable": true,
+      "fit_s": 0.0,
+      "clean": {
+        "acc": 0.6708333333333333,
+        "top3": 0.9208333333333333,
+        "nll": 1.1169928546145882,
+        "ece": 0.19165674316977238
+      },
+      "noisy_030": {
+        "acc": 0.6625,
+        "top3": 0.925,
+        "nll": 1.2278892344662802,
+        "ece": 0.21220578497345072
+      },
+      "noisy_045": {
+        "acc": 0.5458333333333333,
+        "top3": 0.8333333333333334,
+        "nll": 1.577620811842663,
+        "ece": 0.09688154348989657
+      },
+      "drift": {
+        "acc": 0.6,
+        "top3": 0.8625,
+        "nll": 1.4420857080999068,
+        "ece": 0.18215930147130732
+      },
+      "xuser": {
+        "acc": 0.7291666666666666,
+        "top3": 0.9666666666666667,
+        "nll": 0.9997113538226138,
+        "ece": 0.24718813989410487
+      },
+      "predict_ms": 0.008
+    },
+    {
+      "name": "V7  QBN \u00b7 finer x-resolution",
+      "note": "bins matched to key pitch",
+      "interpretable": true,
+      "fit_s": 0.0,
+      "clean": {
+        "acc": 0.6541666666666667,
+        "top3": 0.8791666666666667,
+        "nll": 1.268626802421906,
+        "ece": 0.23959145479695432
+      },
+      "noisy_030": {
+        "acc": 0.6291666666666667,
+        "top3": 0.8583333333333333,
+        "nll": 1.4018294524901411,
+        "ece": 0.24164123958929168
+      },
+      "noisy_045": {
+        "acc": 0.5166666666666667,
+        "top3": 0.8166666666666667,
+        "nll": 1.6668104486296997,
+        "ece": 0.12920714929243962
+      },
+      "drift": {
+        "acc": 0.6,
+        "top3": 0.8041666666666667,
+        "nll": 1.590939681595549,
+        "ece": 0.21409908358322857
+      },
+      "xuser": {
+        "acc": 0.7,
+        "top3": 0.95,
+        "nll": 1.1647225564499872,
+        "ece": 0.28752884539284596
+      },
+      "predict_ms": 0.008
+    }
+  ],
+  "control": {
+    "name": "CONTROL  exact Gaussian posterior",
+    "note": "classical incumbent",
+    "interpretable": true,
+    "fit_s": 0.0,
+    "clean": {
+      "acc": 0.6958333333333333,
+      "top3": 0.9625,
+      "nll": 0.7584629755069447,
+      "ece": 0.11108511092586848
+    },
+    "noisy_030": {
+      "acc": 0.6875,
+      "top3": 0.9666666666666667,
+      "nll": 0.8614346108250065,
+      "ece": 0.07786517870611634
+    },
+    "noisy_045": {
+      "acc": 0.5666666666666667,
+      "top3": 0.9083333333333333,
+      "nll": 1.1881787120057652,
+      "ece": 0.08378465225084457
+    },
+    "drift": {
+      "acc": 0.6,
+      "top3": 0.9333333333333333,
+      "nll": 0.9359477086899256,
+      "ece": 0.03226502651935502
+    },
+    "xuser": {
+      "acc": 0.7708333333333334,
+      "top3": 0.9833333333333333,
+      "nll": 0.6553725818623299,
+      "ece": 0.1524948219175909
+    },
+    "predict_ms": 0.005
+  },
+  "converged_on": "V6  QBN \u00b7 factorised row/slot"
+}

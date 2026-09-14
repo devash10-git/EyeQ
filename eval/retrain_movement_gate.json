@@ -1,0 +1,119 @@
+{
+  "n_frames": 5748,
+  "unreliable_frac": 0.25,
+  "sessions": [
+    "anon/20260910T152728Z",
+    "anon/20260912T063046Z",
+    "anon/20260913T142626Z"
+  ],
+  "classification": [
+    {
+      "name": "QSVM fidelity kernel (retrained)",
+      "balanced_acc": 0.5301554163767107,
+      "recall": 0.08768267223382047,
+      "precision": 0.5163934426229508,
+      "refuse_rate": 0.04244954766875435,
+      "sec": 1014.0376346111298
+    },
+    {
+      "name": "classical RBF SVM (retrained)",
+      "balanced_acc": 0.5279517513337972,
+      "recall": 0.10855949895615867,
+      "precision": 0.4073107049608355,
+      "refuse_rate": 0.06663187195546277,
+      "sec": 1.2471389770507812
+    },
+    {
+      "name": "logistic regression (retrained)",
+      "balanced_acc": 0.5286476455578752,
+      "recall": 0.08072372999304106,
+      "precision": 0.5345622119815668,
+      "refuse_rate": 0.037752261656228255,
+      "sec": 0.060900211334228516
+    },
+    {
+      "name": "deployed gate (synthetic, as shipped)",
+      "balanced_acc": 0.5091626072836929,
+      "recall": 0.024356297842727904,
+      "precision": 0.5737704918032787,
+      "refuse_rate": 0.010612386917188587,
+      "sec": 56.23962068557739
+    },
+    {
+      "name": "threshold rule (pre-quantum baseline)",
+      "balanced_acc": 0.5048712595685455,
+      "recall": 0.012526096033402923,
+      "precision": 0.6,
+      "refuse_rate": 0.005219206680584551,
+      "sec": 0.003901958465576172
+    }
+  ],
+  "control": [
+    {
+      "name": "QSVM fidelity kernel (retrained)",
+      "wins": 4,
+      "losses": 2,
+      "deltas": [
+        " +0.68",
+        " +0.50",
+        " +0.75",
+        " +0.22",
+        " -0.31",
+        " -0.95"
+      ]
+    },
+    {
+      "name": "classical RBF SVM (retrained)",
+      "wins": 4,
+      "losses": 2,
+      "deltas": [
+        " +0.34",
+        " +0.62",
+        " +0.77",
+        " +0.04",
+        " -0.93",
+        " -1.70"
+      ]
+    },
+    {
+      "name": "logistic regression (retrained)",
+      "wins": 5,
+      "losses": 1,
+      "deltas": [
+        " +0.52",
+        " +0.29",
+        " +0.72",
+        " +0.49",
+        " +0.19",
+        " -0.24"
+      ]
+    },
+    {
+      "name": "deployed gate (synthetic, as shipped)",
+      "wins": 3,
+      "losses": 3,
+      "deltas": [
+        " +0.04",
+        " -0.09",
+        " +0.07",
+        " -0.12",
+        " +0.02",
+        " -0.30"
+      ]
+    },
+    {
+      "name": "threshold rule (pre-quantum baseline)",
+      "wins": 6,
+      "losses": 0,
+      "deltas": [
+        " +0.09",
+        " +0.06",
+        " +0.11",
+        " +0.07",
+        " +0.09",
+        " +0.04"
+      ]
+    }
+  ],
+  "seconds": 1072.2
+}

@@ -1,0 +1,20 @@
+# Large artefacts — regenerate rather than commit
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+
+# Model checkpoint (242 MB) and corpora (52 MB)
+cluster_to_text_model/
+data/
+translation-cluster-eng-dataset.csv
+
+# Fake-webcam fixture: rebuilt by tools/fixtures/README.md in seconds
+tools/fixtures/*.y4m
+tools/fixtures/*.jpg
+
+# Backups taken before in-place edits
+*.bak
+
+# DO commit eval/sessions/ — recorded human gaze is the least reproducible
+# thing in this project and every accuracy number depends on it.

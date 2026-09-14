@@ -1,0 +1,24 @@
+[
+  {
+    "experiment": "key_prediction",
+    "method": "VQC",
+    "accuracy": 0.3666666666666667,
+    "macro_f1": null,
+    "ece": 0.13201966664498865,
+    "train_s": null,
+    "infer_ms": 1.988579166653734,
+    "qubits": 4,
+    "notes": ""
+  },
+  {
+    "experiment": "key_prediction",
+    "method": "MLP",
+    "accuracy": 0.9472222222222222,
+    "macro_f1": null,
+    "ece": 0.26465801749219786,
+    "train_s": null,
+    "infer_ms": 0.0063719722725687055,
+    "qubits": null,
+    "notes": ""
+  }
+]

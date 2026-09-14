@@ -1,0 +1,61 @@
+{
+  "sessions": [
+    "anon/20260910T152728Z",
+    "anon/20260912T063046Z",
+    "anon/20260913T142626Z"
+  ],
+  "folds": [
+    {
+      "held_out": "anon/20260910T152728Z",
+      "picked": "KernelRidge RBF",
+      "inner_deg": 3.9747416278546996,
+      "outer_deg": 4.2348764257237566,
+      "incumbent_outer_deg": 4.712016801204722,
+      "gain_pct": 10.12603298356184
+    },
+    {
+      "held_out": "anon/20260912T063046Z",
+      "picked": "Polynomial d=2 + Ridge",
+      "inner_deg": 4.274752619123818,
+      "outer_deg": 3.712371531256095,
+      "incumbent_outer_deg": 3.3495354288322914,
+      "gain_pct": -10.83243064995121
+    },
+    {
+      "held_out": "anon/20260913T142626Z",
+      "picked": "SVR RBF",
+      "inner_deg": 3.568745760267296,
+      "outer_deg": 5.1830985213208285,
+      "incumbent_outer_deg": 5.09514630465992,
+      "gain_pct": -1.7261960972635662
+    }
+  ],
+  "full_data": {
+    "deployed fit_ridge (incumbent)": 4.385566178232311,
+    "ridge, lambda=1e-4 unscaled": 4.237349412469845,
+    "ridge, lambda=1e-5 unscaled": 4.229715520886791,
+    "sklearn RidgeCV": 4.247410608429047,
+    "KernelRidge RBF": 4.061453227144385,
+    "Polynomial d=2 + Ridge": 4.087292256501244,
+    "SVR RBF": 4.106863347285141,
+    "TheilSen (robust)": 4.180377396969521,
+    "HuberRegressor": 4.193309903763921
+  },
+  "honest": {
+    "deployed fit_ridge (incumbent)": 4.385566178232311,
+    "ridge, lambda=1e-4 unscaled": 4.237349412469845,
+    "ridge, lambda=1e-5 unscaled": 4.229715520886791,
+    "sklearn RidgeCV": 4.247410608429047,
+    "KernelRidge RBF": 4.061453227144385,
+    "Polynomial d=2 + Ridge": 4.087292256501244,
+    "SVR RBF": 4.106863347285141,
+    "TheilSen (robust)": 4.1470327129122895,
+    "HuberRegressor": 4.193309903763921
+  },
+  "mean_gain_pct": -0.8108645878843118,
+  "picked": [
+    "KernelRidge RBF",
+    "Polynomial d=2 + Ridge",
+    "SVR RBF"
+  ]
+}

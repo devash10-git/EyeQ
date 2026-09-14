@@ -1,0 +1,1232 @@
+%% gaze_paper.tex — IEEE conference paper
+%%
+%% A Quantum Conditional Selection Rule for Webcam Gaze Typing,
+%% and Canthus-Relative Iris Normalisation
+%%
+%% Built on IEEEtran.cls v1.8b. Note: the supplied skeleton was bare_jrnl.tex
+%% (the *journal* template, which carries \markboth headers and IEEEbiography
+%% blocks). This file uses the [conference] class option instead, which is what
+%% a conference submission requires; the biography environments are therefore
+%% omitted. Switch the first line back to [journal] if a transactions
+%% submission is intended.
+%%
+%% Compile:  pdflatex gaze_paper && bibtex gaze_paper && pdflatex gaze_paper x2
+%% (the bibliography is inlined as thebibliography, so bibtex is not required)
+
+\documentclass[conference]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{xcolor}
+
+% Placeholder frames for figures that are not yet plotted. Replace each
+% \figholder{...} with \includegraphics[width=\linewidth]{yourfile} when the
+% plots are exported. The reserved heights are deliberate: reviewers respond
+% badly to a paper whose figures are squeezed, and the space is easier to fill
+% than to find later.
+\newcommand{\figholder}[2]{%
+  \fboxsep=0pt\fcolorbox{black!25}{black!3}{%
+    \parbox[c][#1][c]{\linewidth}{\centering\footnotesize\color{black!55}#2}}}
+
+% IEEEtran declares no theorem environments; the two propositions in
+% Section V need this.
+\newtheorem{proposition}{Proposition}
+
+\interdisplaylinepenalty=2500
+
+\hyphenation{nor-mal-isa-tion cal-i-bra-tion land-mark}
+
+\begin{document}
+
+\title{A Quantum Conditional Selection Rule for\\ Low-Cost Webcam Gaze Typing}
+
+\author{
+\IEEEauthorblockN{First Author}
+\IEEEauthorblockA{Department of Computer Science and Engineering\\
+Institution Name\\
+City, Country\\
+Email: first.author@institution.edu}
+\and
+\IEEEauthorblockN{Second Author}
+\IEEEauthorblockA{Department of Computer Science and Engineering\\
+Institution Name\\
+City, Country\\
+Email: second.author@institution.edu}
+}
+
+\maketitle
+
+\begin{abstract}
+Text entry still assumes working hands and a physical keyboard, excluding users
+with motor impairments and failing in hands-occupied or sterile settings. We
+present an eye-gaze typing system that runs entirely on a commodity webcam, with
+no infrared hardware and no client build step. Gaze is estimated by mapping
+MediaPipe iris landmarks through a per-user ridge-regression calibration, and
+characters are committed by dwell selection over either a per-letter keyboard or
+large, gaze-friendly key clusters. Clustering makes targets easy to hit but
+renders the input ambiguous: several letters share one region, so distinct words
+collapse onto the same cluster code. To resolve that ambiguity accurately and in
+real time we introduce a \emph{quantum conditional selection rule}. Candidate
+targets form a superposition whose amplitudes carry the gaze likelihood; a
+language-conditioned controlled unitary fuses linguistic context through both
+amplitude and phase; and a Born-rule measurement commits the most probable
+candidate. Unlike classical Bayesian fusion, which multiplies marginals, the
+phase term admits interference between context-coherent hypotheses. We prove the
+rule is strictly more expressive --- it recovers log-linear fusion exactly at
+zero phase, and no classical mixture reproduces its cross-terms --- and a
+consistency-preserving oracle guarantees that every decoded output re-encodes to
+exactly the gazed clusters, never an off-target word. The rule is realised as a
+lightweight classical state-vector simulation over a five-qubit register, well
+inside the webcam frame budget.
+We then measure it, and report that the added expressiveness does not pay. At
+matched prompt rate the interference term is worth a median $-0.03$ percentage
+points across five noise levels, with no significant win or loss; amplitude
+amplification lengthens mean dwell from $2.63$ to $2.80$ frames and costs two
+points of commit accuracy. We give the mechanism rather than the shrug:
+coherence is \emph{anti}-correlated with correctness, because the correct letter
+after an English prefix carries the richest hypothesis support and therefore the
+widest spread of phases. The accuracy instead comes from the front end.
+Replacing eyelid-relative normalisation of the iris offset with a
+canthus-relative one reduces held-out error from $5.97^\circ$ to $4.37^\circ$, a
+$26.5\,\%$ reduction that wins on every recorded session, subsumes explicit head
+pose, and is invariant to head roll by construction to $10^{-15}$. All results
+come from three recorded sessions of a single participant; we state this
+prominently rather than in closing.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Quantum conditional selection rule; quantum-inspired inference;
+interference-based gaze--language fusion; amplitude amplification;
+cluster-constrained decoding; eye-gaze typing; webcam gaze estimation;
+dwell-based selection; assistive text entry; facial landmarks; calibration.
+\end{IEEEkeywords}
+
+\IEEEpeerreviewmaketitle
+
+
+\section{Introduction}
+
+\IEEEPARstart{E}{ye} typing offers people with severe motor impairment a channel
+for written communication that requires no limb movement. Commercial infrared
+eye trackers achieve roughly $0.25$--$0.5^\circ$ of gaze error but cost
+substantially more than the computers they attach to, so a large body of work
+has pursued the same capability using only a consumer webcam.
+
+A webcam gaze keyboard faces two problems in series, and they are not the same
+kind of problem. The first is estimation: turning a low-resolution, uncalibrated
+image of a face into a screen coordinate. The second is decision: turning a noisy
+coordinate and a language context into a committed character. Most of the
+literature addresses the first and treats the second as a hit test.
+
+This paper addresses both, and finds the balance between them counter-intuitive.
+
+For the decision problem we introduce a \emph{quantum conditional selection
+rule}. The deployed system already fuses gaze and language the conventional way,
+by multiplying a gaze posterior with a language prior. That product is a product
+of \emph{marginals}, and a marginal has already discarded the structure that
+produced it: whether a letter's linguistic support came from one confident word
+or from fifty diffuse ones. The selection rule keeps the hypotheses distinct,
+places them in superposition with amplitudes carrying the gaze likelihood,
+applies a language-conditioned unitary that attaches both a magnitude and a
+\emph{phase} to each, and reads the result with the Born rule. The phase channel
+admits interference, which no product of marginals can express.
+
+That is a genuine generalisation and we prove it. It is also, we find, an
+empirically empty one, and the more useful contribution of this paper is the
+explanation of why. The interference term is systematically mis-signed for this
+task: the correct letter after an English prefix is usually the one with the
+richest vocabulary support, so it carries the most hypotheses, the widest spread
+of phases, and hence the \emph{lowest} coherence. Phase derived from hypothesis
+likelihood penalises exactly the evidence it should reward, and no retuning of
+the phase function repairs the sign.
+
+For the estimation problem the literature has converged on an evaluation habit
+that, we argue, obscures progress. Systems are reported as \emph{classifiers}:
+the metric is the proportion of frames in which the gaze direction is assigned to
+the correct region, where the regions number between two and nine. Reported
+figures of $85$--$93\,\%$ are common. This is a legitimate measurement of a
+legitimate design --- most such systems select keys by blinking or by scanning,
+so a coarse direction is all they require --- but it is not comparable to the
+continuous angular error that the wider gaze literature reports, and it cannot
+tell a reader whether a user could point at a key.
+
+We take the harder formulation: a continuous screen coordinate
+(Section~\ref{sec:frontend}), evaluated on targets never used for fitting under
+the protocol of Section~\ref{sec:protocol}, and reported in degrees of visual
+angle. Working in
+that regime surfaced a defect in a step the literature treats as settled, and it
+is there --- not in the decision rule --- that the accuracy turned out to be.
+
+\subsection{Contributions}
+
+\begin{enumerate}
+  \item \textbf{A quantum conditional selection rule} for gaze--language fusion:
+  candidates in superposition with gaze-derived amplitudes, a
+  language-conditioned controlled unitary carrying context in amplitude and
+  phase, a consistency-preserving oracle, and Born-rule commitment, realised as
+  classical state-vector simulation over a five-qubit register.
+
+  \item \textbf{A containment proposition.} The rule reduces to the deployed
+  log-linear fusion exactly, to floating point, at zero phase
+  (Proposition~\ref{prop:contain}), and its cross-terms are unreachable by any
+  classical mixture of the same hypotheses (Proposition~\ref{prop:express}).
+  Containment is what makes the head-to-head comparison honest rather than
+  rigged.
+
+  \item \textbf{A measured null with a mechanism.} Interference is worth a
+  median $-0.03$ percentage points at matched prompt rate and amplification
+  lengthens dwell. We trace this to a sign: the measured coherence separation
+  between correct and incorrect letters is negative at every phase scale and
+  worsens monotonically as the scale grows.
+
+  \item \textbf{Canthus-relative normalisation.} Replacing eyelid-relative
+  normalisation of the iris offset with a canthus-relative one reduces held-out
+  error by $26.5\,\%$ ($5.97^\circ \rightarrow 4.37^\circ$), winning on every
+  recorded session. The mechanism is anatomical: the eyelid moves independently
+  of gaze, the canthi do not. To our knowledge this normalisation appears in
+  none of the surveyed works.
+
+  \item \textbf{An explanation for a reported but undiagnosed asymmetry.} One
+  surveyed system reports $93\,\%$ horizontal against $76\,\%$ vertical accuracy
+  and does not account for the gap. Eyelid contamination predicts exactly this
+  asymmetry, since only the vertical channel is normalised by the aperture.
+
+  \item \textbf{Roll invariance by construction.} Projecting the offset onto the
+  canthus axis and its perpendicular removes head-roll dependence without
+  estimating the roll angle. We verify invariance numerically to
+  $\sim$$10^{-15}$ across $0$--$40^\circ$.
+
+  \item \textbf{An error budget that inverts with head pose.} Per-frame noise is
+  $5.3\,\%$ of the error with a still head and $57.9\,\%$ past $10^\circ$ of
+  roll. We show the instability originates in the landmark detector rather than
+  in the regressor, whose amplification of it stays flat.
+
+  \item \textbf{Reported negative results,} including quantum-kernel regression,
+  explicit head-pose features, an iris-radius scale cue, eye-region de-rotation
+  and discrete hierarchical selection --- each implemented, measured, rejected,
+  and recorded so the next group need not repay the cost.
+\end{enumerate}
+
+
+\section{Related Work}
+
+Table~\ref{tab:survey} summarises ten recent works on webcam gaze keyboards and
+related interfaces. We group them by how the iris is localised, since that
+choice determines what the rest of the system can do.
+
+\textbf{Threshold and projection methods.} Saraswati \emph{et al.}~\cite{ref08}
+detect the face with a Haar cascade and locate the iris by binary thresholding
+followed by integral projection. The approach is inexpensive but the threshold
+must be retuned for each lighting condition --- the paper tabulates separate
+values for $8$, $30$ and $81$\,lx --- and detection fails beyond $50$\,cm.
+
+\textbf{Geometric circle fitting.} Cabatuan \emph{et al.}~\cite{ref09} treat the
+iris as a circle-detection problem, applying Sobel edge detection, a thinning
+step and a Circular Hough Transform, and implement the pipeline on an FPGA in
+Verilog. It is the only surveyed work to target dedicated hardware.
+
+\textbf{Landmark regression with aspect ratios.} The largest group
+\cite{ref02,ref03,ref05,ref07} uses the 68-point \emph{dlib} shape predictor and
+derives an Eye Aspect Ratio (EAR) or a horizontal/vertical gaze ratio. A
+property of this family deserves emphasis: the 68-point model contains
+\emph{no iris landmarks at all}. It locates the eye corners and lids, and
+everything concerning the pupil is inferred from those. This is why all four of
+these systems select keys by \emph{blinking} or scanning rather than by
+pointing --- the representation cannot support a continuous coordinate.
+
+\textbf{Dedicated iris landmarks.} Rafid \emph{et al.}~\cite{ref04} and the
+virtual-mouse system of~\cite{ref06} use MediaPipe Face Mesh, which supplies a
+five-point iris ring per eye in addition to 468 face landmarks. This yields the
+iris centre directly and is the prerequisite for continuous regression. Only two
+of the ten surveyed works adopt it, both dated 2023 or later.
+
+\textbf{End-to-end learning.} Waideman and Aquino Junior~\cite{ref01} regress
+gaze from pixels with a four-stream CNN and are the only surveyed work to model
+head pose, supplying head position as a fourth network channel. Abhaya
+\emph{et al.}~\cite{ref03} classify nine gaze directions with a CNN.
+
+\textbf{Selection strategy.} Zhou \emph{et al.}~\cite{ref09b} address the Midas
+touch problem with an adaptive dwell time that shortens as the user's input
+speed rises, using a commercial SMI eye tracker rather than a webcam.
+
+\textbf{Ambiguous input and language models.} Enlarging targets to make them
+easy to hit, then recovering the intended word with a language model, is the
+established trade in text entry: SHARK\textsuperscript{2}~\cite{ref17} decodes
+whole-word gestures against a lexicon, and the same bargain underlies our
+cluster layout. Our addition is the constraint direction. Where a conventional
+decoder scores hypotheses and may return a word the input does not support, the
+consistency oracle of Section~\ref{sec:rule} admits only hypotheses that
+re-encode to exactly the gazed sequence.
+
+\subsection{Positioning}
+
+Two observations follow from Table~\ref{tab:survey} and motivate this work.
+
+First, \textbf{no surveyed work reports gaze error in degrees}. The reported
+percentages measure region classification, often over as few as two or three
+zones where chance alone is $33$--$50\,\%$. Our results therefore cannot be
+ranked against them, and we do not attempt to; we state this explicitly because
+a table of mixed metrics invites exactly that error.
+
+Second, \textbf{head pose is almost entirely absent}. One work models it
+implicitly~\cite{ref01}; one \emph{prohibits} head movement and reports the
+resulting discomfort as a limitation~\cite{ref02}; one observes that head
+shaking causes error and does not address it~\cite{ref09b}. No surveyed work
+performs geometric head-pose estimation. Section~\ref{sec:results} offers a
+partial explanation for why that omission has cost less than might be expected.
+
+% ---------------------------------------------------------------------------
+\begin{table*}[!t]
+\renewcommand{\arraystretch}{1.25}
+\caption{Survey of Ten Recent Webcam Gaze-Keyboard Systems. The Metric Column is
+the Point of the Table: Reported Figures Measure Region \emph{Classification},
+Not Continuous Gaze Error, and Are Therefore Not Comparable With This Work.}
+\label{tab:survey}
+\centering
+\footnotesize
+\begin{tabular}{@{}p{2.6cm}p{1.9cm}p{3.2cm}p{3.0cm}p{2.0cm}p{2.4cm}@{}}
+\toprule
+\textbf{Work} & \textbf{Face} & \textbf{Iris localisation} &
+\textbf{Selection} & \textbf{Head pose} & \textbf{Reported} \\
+\midrule
+Waideman \emph{et al.}~\cite{ref01} & MMOD-CNN & 4-stream CNN (face, both eyes, head) & CNN regression & \textbf{Yes}, 4th channel & 93\,\% L/R, \textbf{76\,\% U/D} \\
+Islam \emph{et al.}~\cite{ref02} & HOG\,+\,SVM & dlib 68-pt, midpoint & Blink, sequential scan & Movement prohibited & CPM/WPM only \\
+Abhaya \emph{et al.}~\cite{ref03} & dlib & dlib 68-pt landmarks & CNN, 9 directions (T9) & No & 15.3\,\% error \\
+Rafid \emph{et al.}~\cite{ref04} & MediaPipe & \textbf{MediaPipe iris} & $2\times4$ grid, blink & No & 14.53 CPM \\
+Varshini \emph{et al.}~\cite{ref05} & dlib & dlib 68-pt, EAR & Blink, group scan & No & 92.5\,\%, 17 WPM \\
+Virtual mouse~\cite{ref06} & MediaPipe & \textbf{MediaPipe Face Mesh iris} & Blink duration & Cited, not implemented & --- \\
+Kathpal \emph{et al.}~\cite{ref07} & OpenCV/dlib & Horizontal/vertical gaze ratio & Blink & No & 91\,\% / 85\,\% (glasses) \\
+Saraswati \emph{et al.}~\cite{ref08} & Haar cascade & Threshold + integral projection & Pointer, blink & No & 40--50\,cm only \\
+Cabatuan \emph{et al.}~\cite{ref09} & --- & Sobel + thinning + Circular Hough & On-screen keyboard & No & FPGA $\equiv$ MATLAB \\
+Zhou \emph{et al.}~\cite{ref09b} & --- & SMI ETG 2w (commercial IR) & Adaptive dwell, 600\,ms & Noted, unsolved & --- \\
+\midrule
+\textbf{This work} & MediaPipe & \textbf{MediaPipe iris, canthus-normalised} & \textbf{Dwell pointing} & \textbf{Implicit (canthus frame)} & $\mathbf{4.37^\circ}$ \textbf{continuous} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+% ---------------------------------------------------------------------------
+
+
+\section{The Vertical-Asymmetry Observation}
+
+The observation that motivates our method is available in the surveyed
+literature but is not commented upon there. Waideman and Aquino
+Junior~\cite{ref01} report directional accuracy split by axis: $93\,\%$ for
+left/right and $76\,\%$ for up/down. The gap is large and the paper does not
+explain it.
+
+Consider how the vertical channel is conventionally formed. Let $\mathbf{p}$ be
+the iris centre and let $t$, $b$ be the upper and lower eyelid landmarks. The
+standard vertical feature is
+\begin{equation}
+v = \frac{p_y - t_y}{b_y - t_y + \epsilon},
+\label{eq:eyelid}
+\end{equation}
+that is, the iris height expressed as a fraction of the \emph{eyelid aperture}.
+The denominator of~\eqref{eq:eyelid} is not a fixed anatomical quantity. It
+contracts with every squint, every partial blink, and with ambient brightness.
+Any such change alters $v$ without the eye having moved. The horizontal channel,
+normalised by the distance between the eye corners, suffers no equivalent
+contamination.
+
+An eyelid-normalised vertical channel should therefore be measurably worse than
+its horizontal counterpart --- which is what~\cite{ref01} reports. Our method
+follows directly: normalise against a structure that does not move.
+
+
+\section{Front End: Estimating the Coordinate}
+\label{sec:frontend}
+
+\subsection{Landmark acquisition}
+
+We use MediaPipe Face Landmarker~\cite{ref10}, which returns 478 landmarks including a
+five-point iris ring per eye (indices 468--472 and 473--477) and a
+$4\times4$ facial transformation matrix. Detection runs on the GPU where
+available and falls back to CPU/WASM otherwise. The medial and lateral canthi
+are landmarks 133/33 (left) and 362/263 (right).
+
+\subsection{Canthus-relative normalisation}
+
+Let $\mathbf{i}$, $\mathbf{m}$ and $\mathbf{l}$ denote the iris centre and the
+medial and lateral canthi of one eye. We define the eye axis and its
+perpendicular,
+\begin{equation}
+\mathbf{u} = \frac{\mathbf{m} - \mathbf{l}}{\lVert \mathbf{m} - \mathbf{l}\rVert},
+\qquad
+\mathbf{u}^{\perp} = \begin{bmatrix} -u_y \\ u_x \end{bmatrix},
+\end{equation}
+and take the iris offset from the canthus midpoint,
+$\mathbf{d} = \mathbf{i} - \tfrac{1}{2}(\mathbf{m} + \mathbf{l})$. The two
+features per eye are the components of that offset in the eye's own frame,
+scaled by the inter-canthal distance $w = \lVert \mathbf{m} - \mathbf{l}\rVert$:
+\begin{equation}
+c_{\parallel} = \frac{\mathbf{d}\cdot\mathbf{u}}{w},
+\qquad
+c_{\perp} = \frac{\mathbf{d}\cdot\mathbf{u}^{\perp}}{w}.
+\label{eq:canthus}
+\end{equation}
+
+Two properties follow. The scale $w$ is a Euclidean distance rather than a
+coordinate difference, so it does not collapse as the head turns. And because
+$\mathbf{u}$ rotates with the head, \eqref{eq:canthus} is invariant to head roll
+\emph{by construction} --- no roll angle is estimated, and none is needed.
+Fig.~\ref{fig:geometry} contrasts the two normalisations.
+
+\subsection{Feature vector and calibration}
+
+The full vector concatenates the four conventional ratios, head translation and
+scale proxies, a bias term, and the four canthus components
+of~\eqref{eq:canthus}, giving $d = 12$. Screen coordinates are obtained by ridge
+regression,
+\begin{equation}
+\mathbf{W} = (\mathbf{F}^{\!\top}\mathbf{F} + \lambda \mathbf{I})^{-1}
+             \mathbf{F}^{\!\top}\mathbf{T},
+\end{equation}
+fitted to a short per-user calibration of nine on-screen targets anchored to key
+centres, five fixations each. Samples are weighted by a geometric frame-quality
+score; ordinary refinement clicks gathered during use are admitted at a tenth of
+the weight of a calibration click, since they are not verified ground truth.
+
+% ---------------------------------------------------------------------------
+\begin{figure}[!t]
+\centering
+\figholder{5.4cm}{%
+  \textbf{Fig.~2 placeholder --- normalisation geometry}\\[4pt]
+  Left: eyelid-relative. The denominator is the aperture $b_y-t_y$,\\
+  which contracts on squint and partial blink.\\[6pt]
+  Right: canthus-relative. The offset $\mathbf{d}$ is resolved on\\
+  $(\mathbf{u},\mathbf{u}^{\perp})$ and scaled by the inter-canthal distance $w$,\\
+  both of which are rigid.\\[8pt]
+  \emph{Replace with} \texttt{\textbackslash includegraphics[width=\textbackslash linewidth]\{fig\_geometry\}}}
+\caption{Eyelid-relative against canthus-relative normalisation of the iris
+offset. Only the latter is invariant to eyelid aperture and to head roll.}
+\label{fig:geometry}
+\end{figure}
+% ---------------------------------------------------------------------------
+
+
+\subsection{Components integrated around the estimator}
+\label{sec:integrated}
+
+The coordinate a regressor emits is not yet a usable pointer, and several
+components between the two are load-bearing. We list them because they are the
+difference between the numbers in Section~\ref{sec:results} and a system that is
+unpleasant to use, and because two of them were added in response to measured
+defects rather than to intuition.
+
+\textbf{Temporal filtering.} Predictions pass through a One Euro
+filter~\cite{ref11}, whose cutoff rises with speed so that a fixation is smoothed
+heavily while a saccade is not lagged. Within the dwell window the committed
+point is the fixation centroid rather than the instantaneous estimate.
+
+\textbf{Dwell hysteresis.} A cursor resting on a key boundary would otherwise
+oscillate between neighbours and commit neither. The dwell target is retained
+until the estimate leaves the key by a fixed margin for several consecutive
+frames, which converts boundary jitter into a stable selection.
+
+\textbf{Coverage-aware calibration eviction.} The calibration buffer is bounded.
+Evicting oldest-first appears harmless and is not: it silently destroys spatial
+coverage, and we measured a buffer that had collapsed from thirteen occupied
+grid cells to two, with error rising from $4.93^\circ$ to $8.25^\circ$. Eviction
+is therefore driven by grid occupancy, the original calibration anchors are
+evicted last, and unverified refinement samples enter at a tenth of the weight
+of a calibration click.
+
+\textbf{Geometric quality gating.} Samples are weighted by a frame-quality score
+combining face scale, centring and landmark stability, and an adaptive eye
+aspect ratio baseline suppresses frames during blinks. The baseline is per-user
+because absolute EAR varies more between people than a blink varies within one.
+
+\textbf{User-centred pose convention.} The facial transformation matrix is
+right-handed in the camera's frame, which inverts the sense of yaw and pitch
+relative to how a user describes their own movement. Uncorrected, a
+head-movement recording is labelled backwards. Correcting the signs does not
+improve accuracy --- a sign flip is absorbed by the regression weights --- but it
+is a prerequisite for any posture-stratified analysis being meaningful, and
+Table~\ref{tab:budget} depends on it.
+
+\textbf{Reliability gating.} A movement classifier refuses to commit from
+windows that look like saccades or blinks, and a Bayesian network converts its
+state estimate into $P(\text{key correct})$, which tempers the fused posterior so
+that a marginal frame falls below the commit threshold and asks instead. A
+watchdog disables the gate after consecutive refusals, since a gate whose input
+drifts out of distribution can otherwise refuse every keystroke.
+
+\textbf{Capture controls.} Exposure and contrast are exposed in the interface,
+because the illumination range over which landmark detection is stable is
+narrower than the range a webcam will silently auto-expose across.
+
+\section{A Quantum Conditional Selection Rule}
+\label{sec:rule}
+
+\subsection{What a product of marginals discards}
+
+At commit time the deployed system scores each candidate key $k$ by multiplying
+the gaze posterior with a language prior,
+\begin{equation}
+\mathrm{score}(k) \;=\; P(k \mid \text{gaze}) \cdot
+  \max\!\big(P(k \mid \text{prefix}),\, \varepsilon\big)^{\beta},
+\label{eq:loglinear}
+\end{equation}
+with $\beta < 1$ damping the prior so that the language model advises rather
+than vetoes, and $\varepsilon$ flooring it so that no letter becomes untypable.
+$P(k \mid \text{gaze})$ is the exact integral of the gaze Gaussian over the key
+rectangle; $P(k \mid \text{prefix})$ comes from a frequency-weighted prefix trie
+backed off to a character $n$-gram.
+
+The second factor is a \emph{marginal}. It is the total frequency mass of every
+vocabulary word that continues the prefix with $k$, and forming that sum
+destroys the distinction between a letter supported by one dominant continuation
+and one supported by a diffuse spray that agrees on nothing beyond a single
+character. After the prefix \texttt{th}, the letters \texttt{e} and \texttt{r}
+may carry comparable marginal mass while meaning very different things.
+Equation~\eqref{eq:loglinear} cannot tell them apart, because the information
+was gone before the product was taken.
+
+\subsection{The rule}
+
+Let $H$ be the vocabulary completions of the current prefix, each with frequency
+weight $w_h$ and each proposing a next letter $k_h$. Candidates occupy a
+five-qubit register spanning $a$--$z$ and a word-boundary symbol, prepared in
+superposition with amplitudes carrying the gaze likelihood:
+\begin{equation}
+\lvert \psi \rangle \;=\; \sum_{k} \sqrt{P(k \mid \text{gaze})}\; \lvert k \rangle .
+\end{equation}
+
+A language-conditioned diagonal unitary then attaches to each candidate both a
+magnitude and a phase. Writing $v_h = w_h / P(k \mid \text{prefix})$ for the
+hypothesis weights \emph{within} letter $k$, so that $\sum_h v_h = 1$, the
+conditioned amplitude is
+\begin{equation}
+a(k) \;=\; \sqrt{P(k \mid \text{gaze})}\;
+           P(k \mid \text{prefix})^{\beta/2}\;
+           \underbrace{\sum_{h:\,k_h = k} v_h\, e^{i\varphi_h}}_{c(k)} ,
+\label{eq:rule}
+\end{equation}
+and the Born rule commits the most probable candidate, $P(k) = \lvert a(k)
+\rvert^{2}$. The factor $c(k)$ is the \emph{coherence} of letter $k$: a weighted
+mean phasor, with
+\begin{equation}
+\lvert c(k) \rvert^{2}
+  = \sum_{h}\sum_{h'} v_h v_{h'} \cos(\varphi_h - \varphi_{h'}) ,
+\label{eq:interference}
+\end{equation}
+whose off-diagonal terms are the interference. Since $\lvert c(k)\rvert \le 1$
+with equality exactly when the supporting hypotheses agree in phase, coherence
+acts as a penalty on letters reachable only through mutually incoherent
+continuations.
+
+Phases are assigned from each hypothesis's mean per-character log-frequency,
+rescaled to $[0,1]$ across $H$ and multiplied by a scale $\sigma_\varphi \pi$, so
+that the least surprising completion sits at phase $0$. Length must enter:
+phase driven by raw frequency alone is degenerate in precisely the case the
+mechanism exists to catch, since a spray of comparably frequent completions
+would receive one common phase and interfere perfectly constructively.
+
+\subsection{Containment and expressiveness}
+
+\begin{proposition}[Containment]
+\label{prop:contain}
+At $\sigma_\varphi = 0$, \eqref{eq:rule} reduces to \eqref{eq:loglinear}.
+\end{proposition}
+
+\noindent\emph{Proof.} With all $\varphi_h = 0$ we have $c(k) = \sum_h v_h = 1$
+for every $k$, so $\lvert a(k)\rvert^{2} = P(k\mid\text{gaze})\,
+P(k\mid\text{prefix})^{\beta}$, which is~\eqref{eq:loglinear} up to the shared
+normalisation. $\square$
+
+This is not a formality. A model class that cannot express the incumbent cannot
+be fairly said to beat it, and the comparison in Section~\ref{sec:results} is
+only meaningful because the baseline lies strictly inside the family being
+tested. We assert the identity numerically to $10^{-12}$ over randomised inputs
+rather than relying on the derivation.
+
+\begin{proposition}[Expressiveness]
+\label{prop:express}
+No classical mixture over the same hypotheses reproduces~\eqref{eq:interference}.
+\end{proposition}
+
+\noindent\emph{Proof sketch.} A mixture assigns letter $k$ the probability
+$\sum_h v_h^{2}$ after normalisation --- the diagonal of~\eqref{eq:interference}
+alone. The off-diagonal terms depend on phase differences, and a mixture has no
+phase. Since $\big(\sum_h v_h\big)^{2} > \sum_h v_h^{2}$ whenever more than one
+hypothesis contributes, the two disagree. $\square$
+
+Concretely, two hypothesis sets with \emph{identical} marginals --- so
+indistinguishable to~\eqref{eq:loglinear} --- receive different posteriors
+under~\eqref{eq:rule}, and the diffuse set is the one penalised.
+
+\subsection{The consistency oracle and amplitude amplification}
+
+The cluster decoder's correctness guarantee is a predicate: a hypothesis is
+admissible only if re-encoding it reproduces exactly the cluster sequence the
+user gazed. As an operator this is a projector $O_S$ onto the admissible
+subspace, and it is what prevents the language model from ever proposing a word
+the gaze did not support.
+
+Given a projector, amplitude amplification~\cite{ref13}, the generalisation of
+Grover search~\cite{ref14} to a non-uniform initial distribution, rotates
+amplitude into the marked subspace in $O(1/\sqrt{p_S})$ rather than $O(1/p_S)$
+steps, reflecting about the prepared state:
+\begin{equation}
+Q \;=\; -\big(2\lvert\psi\rangle\langle\psi\rvert - I\big)\, O_S ,
+\qquad
+m \;=\; \left\lfloor \frac{\pi/4}{\arcsin\sqrt{p_S}} \right\rfloor .
+\end{equation}
+The intent is to let the top posterior clear the commit threshold from fewer
+frames of accumulated evidence, shortening dwell. Section~\ref{sec:results}
+reports what it does instead.
+
+\subsection{Cost}
+
+Twenty-seven candidates occupy a $32$-amplitude register. Preparation,
+conditioning, amplification and measurement are a handful of vector operations
+costing microseconds, far inside a $33$\,ms frame budget. We claim no quantum
+speedup and simulate no hardware: the claim is about the selection rule's
+functional form, not its execution. The distinction matters, because the
+amplitude encoding used here is a product of per-feature factors and therefore
+classically simulable by construction.
+
+
+\section{Evaluation Protocol}
+\label{sec:protocol}
+
+The protocol is described in full because the survey suggests that evaluation
+practice, rather than algorithmic choice, is the largest source of
+incomparability in this area.
+
+\subsection{Recording}
+
+Each session presents 21 targets: 13 used for fitting and 8 held out at
+positions the fit never sees, placed to span the corner, edge and centre regions
+of the display. Each target receives five fixations of 300\,ms of retained
+samples, with the first 150\,ms discarded to allow the saccade to settle. The
+participant's screen dimensions and viewing distance are recorded so that the
+conversion to degrees is measured rather than assumed.
+
+\subsection{Splits}
+
+All splits are \textbf{grouped by target}. The five fixations recorded at one
+position are one observation measured five times, not five observations;
+splitting by sample leaves near-identical siblings in the training set and
+selects a regulariser far too small. Unless stated otherwise, results are
+leave-one-target-out over all 21 positions.
+
+\subsection{Metrics}
+
+We report three units. \emph{Pixels} are what the dwell hit-test sees.
+\emph{Degrees of visual angle} make the work comparable with the gaze
+literature. \emph{Fractions of a key pitch} answer whether the error matters for
+typing at all: a mean error above one key pitch means the estimate lands on the
+wrong key more often than the right one, irrespective of how good the percentage
+looks. Throughput figures quoted for comparison follow the conventions
+of~\cite{ref12}.
+
+\subsection{Data quality}
+
+Sessions are admitted only if they cover the full target grid and lose less than
+$20\,\%$ of frames to tracking dropout. One recorded session lost $67\,\%$ of its
+frames to poor illumination and is excluded from all aggregates; we report its
+existence rather than silently dropping it.
+
+
+\subsection{Selection-rule protocol}
+\label{sec:ruleproto}
+
+The selection rule is evaluated by end-to-end typing simulation over the
+$16{,}839$-word vocabulary, with the gaze likelihood computed as the exact
+Gaussian integral over key rectangles --- the same computation the deployed
+keyboard performs --- at controlled noise levels $\sigma \in \{30,40,50,60,75\}$
+pixels against a $100 \times 110$ pixel key. Three points of protocol carry the
+weight of the comparison.
+
+\textbf{Identical noise.} Both arms are driven from the same seeded generator,
+so every arm sees the same draws and the same key posteriors. Any difference is
+the selection rule and nothing else.
+
+\textbf{Matched prompt rate.} Accuracy alone cannot settle this. The keyboard
+declines to commit below a confidence threshold and asks instead, and a prompt
+always yields the correct character, so any rule reaches $100\,\%$ accuracy by
+prompting constantly. We therefore sweep the threshold, trace the whole
+accuracy/prompt-rate curve, and compare \emph{commit accuracy at matched prompt
+rate}. This also removes the threshold as a confound, since neither arm keeps a
+threshold tuned in its own favour.
+
+\textbf{Held-out phase scale.} $\sigma_\varphi$ is tuned on a $60$-sentence
+training split and reported on a disjoint $60$-sentence held-out split. A gain
+that does not survive the split is not a gain.
+
+For the dwell measurement, each frame contributes an independent noisy sample
+whose evidence is discounted to a quarter of one independent observation.
+Consecutive gaze frames are strongly correlated --- the eye is still and the
+landmark noise is not white --- and treating them as independent lets any arm
+commit within one or two frames, leaving nothing to measure. The discount is
+applied identically to both arms.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Feature ablation}
+
+Table~\ref{tab:ablation} gives the principal result. Canthus normalisation
+reduces pooled error from $5.97^\circ$ to $4.37^\circ$, a $26.5\,\%$ reduction,
+and improves every session individually ($+16.5\,\%$, $+48.0\,\%$, $+11.7\,\%$);
+Fig.~\ref{fig:ablation} shows the per-session breakdown.
+
+Two rows isolate the cause. Adding an \emph{iris-ring radius} scale cue --- a
+metric distance estimate, since human iris diameter is nearly constant across
+adults --- yields $1.5\,\%$, within noise. The gain is therefore attributable
+specifically to the canthi and not to having more features. Adding explicit
+\emph{head-pose} features on top of the canthus frame yields $-1.0\,\%$: the
+canthus frame is already head-attached, so an explicit pose stage re-derives
+information the representation has already removed. Head pose alone, without
+canthus normalisation, is worth $7.1\,\%$, which is the size of the effect the
+canthus frame subsumes.
+
+% ---------------------------------------------------------------------------
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.3}
+\caption{Feature Ablation. Leave-One-Target-Out Over All 21 Positions, Three
+Recorded Sessions. Lower is Better.}
+\label{tab:ablation}
+\centering
+\footnotesize
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Feature set} & \textbf{Dim} & \textbf{S1} & \textbf{S2} &
+\textbf{S3}$^{\dagger}$ & \textbf{Pooled} \\
+ & & (px) & (px) & (px) & (px / deg) \\
+\midrule
+Deployed (eyelid-relative)      & 8  & 196.9 & 281.0 & 277.0 & 251.7 / 5.97 \\
+\quad + iris-ring radius        & 11 & 194.6 & 274.1 & 275.0 & 247.9 / 5.88 \\
+\quad + head pose only          & 14 & 192.4 & 230.8 & 278.3 & 233.8 / 5.55 \\
+\textbf{\quad + canthus}        & \textbf{12} & \textbf{164.5} & \textbf{146.2} & \textbf{244.6} & \textbf{185.1 / 4.37} \\
+\quad + canthus + radius        & 15 & 164.5 & 146.0 & 242.7 & 184.4 / 4.35 \\
+\quad + canthus + pose          & 21 & 159.7 & 148.7 & 250.3 & 186.2 / 4.40 \\
+\quad + all of the above        & 24 & 158.2 & 147.5 & 249.4 & 185.0 / 4.37 \\
+\bottomrule
+\multicolumn{6}{@{}l@{}}{\footnotesize $^{\dagger}$S3 was recorded with deliberate head movement.}
+\end{tabular}
+\end{table}
+% ---------------------------------------------------------------------------
+
+% ---------------------------------------------------------------------------
+\begin{figure}[!t]
+\centering
+\figholder{5.8cm}{%
+  \textbf{Fig.~3 placeholder --- per-session ablation}\\[4pt]
+  Grouped bars: three sessions $\times$ feature sets,\\
+  error in degrees, lower is better.\\[6pt]
+  The point the figure must make: canthus wins\\
+  \emph{every} session, while iris radius and head pose\\
+  do not separate from the baseline.\\[8pt]
+  \emph{Replace with} \texttt{\textbackslash includegraphics[width=\textbackslash linewidth]\{fig\_ablation\}}}
+\caption{Held-out error by feature set and session. Canthus normalisation is the
+only addition that improves all three sessions.}
+\label{fig:ablation}
+\end{figure}
+% ---------------------------------------------------------------------------
+
+\subsection{An error budget that inverts with head pose}
+
+We decompose the held-out error into a \emph{within-fixation} component --- the
+scatter of predictions about their own mean during a single fixation, which
+averages away with temporal filtering --- and a \emph{between-fixation}
+component, the offset of that mean from the true target, which does not. The
+deployed system suppresses the former with the speed-adaptive low-pass filter
+and dwell-window fixation centroid of Section~\ref{sec:integrated}.
+
+Table~\ref{tab:budget} shows that the balance reverses with head roll. With a
+near-still head, noise is $5.3\,\%$ of the budget and the systematic offset
+dominates; beyond $10^\circ$ of roll, noise is $57.9\,\%$ and within-fixation
+scatter has grown ninefold, from $0.77^\circ$ to $6.85^\circ$.
+Fig.~\ref{fig:budget} plots the crossing.
+
+This has a practical consequence and an interpretive one. Practically, it means
+that image-quality and temporal-filtering work --- which attacks only the noise
+term --- has a ceiling of about $13\,\%$ for a seated, still user and becomes the
+dominant lever once the user moves. Interpretively, it suggests that
+disagreements in the literature about whether webcam gaze is limited by sensor
+noise or by calibration may be disagreements about posture rather than about
+systems.
+
+We further isolated where the added noise originates. Per-frame feature scatter
+grows $5.5\times$ ($0.116 \rightarrow 0.638$ of the calibration spread) while the
+regressor's amplification of it, measured as the leverage
+$\mathbf{f}^{\!\top}\mathbf{A}^{-1}\mathbf{f}$, stays flat ($0.02 \rightarrow
+0.06$, i.e. $1.01\times \rightarrow 1.03\times$). The instability is therefore in
+the landmark detector, not in the fit: the model is not extrapolating, it is
+being fed noisier inputs.
+
+% ---------------------------------------------------------------------------
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.3}
+\caption{Error Budget by Head Roll. The Character of the Error Inverts:
+Systematic Offset Dominates a Still Head, Per-Frame Noise Dominates a Tilted
+One.}
+\label{tab:budget}
+\centering
+\footnotesize
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+$|\text{roll}|$ & \textbf{Total} & \textbf{Within-fix.} &
+\textbf{Between-fix.} & \textbf{Noise share} \\
+\midrule
+$0$--$2^\circ$    & $3.31^\circ$ & $0.77^\circ$ & $3.26^\circ$ & $5.3\,\%$ \\
+$2$--$5^\circ$    & $4.44^\circ$ & $2.08^\circ$ & $3.38^\circ$ & $27.3\,\%$ \\
+$\geq 10^\circ$   & $9.20^\circ$ & $\mathbf{6.85^\circ}$ & $5.84^\circ$ & $\mathbf{57.9\,\%}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+% ---------------------------------------------------------------------------
+
+% ---------------------------------------------------------------------------
+\begin{figure}[!t]
+\centering
+\figholder{5.6cm}{%
+  \textbf{Fig.~4 placeholder --- error against head roll}\\[4pt]
+  Stacked area or twin-line plot: total error, within-\\
+  fixation and between-fixation components against\\
+  measured $|\text{roll}|$, with the noise share on a\\
+  secondary axis crossing $50\,\%$ near $8$--$10^\circ$.\\[8pt]
+  \emph{Replace with} \texttt{\textbackslash includegraphics[width=\textbackslash linewidth]\{fig\_budget\}}}
+\caption{Decomposition of held-out error against head roll. The crossing point,
+where per-frame noise overtakes systematic offset, falls near $8$--$10^\circ$.}
+\label{fig:budget}
+\end{figure}
+% ---------------------------------------------------------------------------
+
+\subsection{Roll invariance}
+
+Rotating a synthetic face through $0$--$40^\circ$ and recomputing the features,
+the canthus components of~\eqref{eq:canthus} drift by $\sim$$10^{-15}$, i.e. at
+floating-point precision, while an image-axis formulation of the same offset
+drifts by $0.069$ --- a substantial fraction of the feature's own range. The
+representation remains sensitive to genuine iris movement, so the invariance is
+not achieved by the feature going dead.
+
+On recorded data the practical effect is conditional. Stratified by measured
+roll, the eye-frame projection is worth $+11.3\,\%$ beyond $14^\circ$ and
+$-4.3\,\%$ below $5^\circ$; pooled over all postures it is $+4.5\,\%$. We
+therefore present it as a robustness property rather than an accuracy gain, and
+note that head tilt remains expensive under either formulation --- error roughly
+triples at $16^\circ$ regardless.
+
+
+\subsection{The selection rule at matched prompt rate}
+\label{sec:ruleresult}
+
+Table~\ref{tab:selection} gives the held-out comparison, under the protocol of
+Section~\ref{sec:ruleproto}. Tuned on the training
+split, the phase scale that maximised commit accuracy was
+$\sigma_\varphi = 0.40$, worth $+0.03$ percentage points there. On held-out
+sentences that advantage does not appear: across twenty $(\sigma, \text{prompt
+rate})$ cells the median change is $-0.03$ percentage points, and a paired
+Wilcoxon test over sentences finds no significant difference at any of the five
+noise levels --- zero wins and zero losses. Fig.~\ref{fig:selection} plots the
+two frontiers, which lie on top of one another.
+
+The nulls are not an artefact of a rule that fails to engage. The two posteriors
+do differ, just negligibly and without direction: the mean Kullback--Leibler
+divergence between them is $4.2\times10^{-4}$ nats per keystroke. Nor is the
+outcome an artefact of a scale chosen too small to matter. Scales above $0.6$
+produce substantial interference and \emph{lose}, falling from $97.0\,\%$ to
+$95.3\,\%$ on the training split as $\sigma_\varphi$ rises from $0$ to $1.0$.
+There is no setting at which the phase channel helps.
+
+\subsection{Amplitude amplification and dwell}
+
+Table~\ref{tab:dwell} reports frames to commit. Two findings, in order of
+interest.
+
+First, applied after the language-conditioned unitary, amplification is a
+\emph{no-op by construction}. The conditioned state already places $94$--$98\,\%$
+of its amplitude on consistent letters, so the optimal round count
+$\lfloor(\pi/4)/\arcsin\sqrt{p_S}\rfloor$ evaluates to zero and the operator is
+never applied. The quadratic speedup is real, but it addresses a bottleneck this
+system does not have --- the admissible subspace is not rare.
+
+Second, forced to act where there \emph{is} scattered amplitude to rotate ---
+on the raw gaze register, before conditioning, where the marked mass on a
+scattered fixation runs $0.31$--$0.78$ --- amplification makes things worse.
+Median dwell is unchanged at $2.0$ frames, mean dwell rises from $2.63$ to
+$2.80$, and commit accuracy falls from $98.4\,\%$ to $96.4\,\%$. A paired test
+over the $249$ keystrokes both arms committed gives $p = 0.48$. We therefore do
+not support the claim that amplitude amplification shortens dwell time in this
+system; on our measurements it lengthens it slightly while costing accuracy.
+
+\subsection{Why interference fails: a sign, not a magnitude}
+\label{sec:why}
+
+A null result is more useful with a mechanism attached, and this one has a sharp
+one. For interference to help, the coherence penalty must fall more heavily on
+wrong letters than on right ones. Table~\ref{tab:coherence} measures exactly
+that separation, and it is negative at every phase scale and grows steadily more
+negative as the scale rises, from $-0.004$ at $\sigma_\varphi = 0.2$ to
+$-0.108$ at $\sigma_\varphi = 2.0$.
+
+The cause is structural. The correct letter following an English prefix is
+typically the one with the \emph{richest} vocabulary support: many genuine
+continuations, therefore many hypotheses, therefore the widest spread of phases
+and the lowest coherence. A wrong letter is typically backed by one obscure
+completion and sits at coherence $1$. Any phase computed from hypothesis
+likelihood thus penalises the letter with the strongest linguistic evidence.
+
+We checked two alternative explanations and rejected both. The effect is not a
+shortage of hypotheses: raising the budget from $4$ to $4096$ completions moves
+the mean coherence only from $0.982$ to $0.988$, whereas equal-weight
+hypotheses with phases spread over $[0,\pi]$ would sit between $0.33$ and
+$0.64$. Nor is it Zipfian weight concentration:
+flattening the within-letter weights to uniform, holding phases fixed, changes
+the mean coherence from $0.9883$ to $0.9879$. The limitation is the phase
+\emph{source}. A language model offers no feature orthogonal to the likelihood
+that already determines the magnitude, so the phase channel carries no
+independent information for interference to exploit.
+
+We state the scope of this negative result carefully. It concerns
+likelihood-derived phase on a letter-prediction task, not the selection rule as
+a formal object, and not tasks where an orthogonal phase source exists.
+Propositions~\ref{prop:contain} and~\ref{prop:express} are unaffected.
+
+% ---------------------------------------------------------------------------
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.3}
+\caption{Selection Rule Against Deployed Log-Linear Fusion, Held-Out, at Matched
+Prompt Rate. Each Cell Gives the Baseline Commit Accuracy and the Rule's Change.
+$p$ is a Paired Wilcoxon Over Sentences at the Deployed Threshold.}
+\label{tab:selection}
+\centering
+\footnotesize
+\begin{tabular}{@{}lcccc c@{}}
+\toprule
+$\sigma$ (px) & \textbf{2\,\% prompts} & \textbf{5\,\%} & \textbf{10\,\%} &
+\textbf{20\,\%} & $p$ \\
+\midrule
+30 & 0.971 \; $+$0.003 & 0.977 \; $+$0.002 & 0.986 \; $-$0.001 & 0.988 \; $-$0.000 & 1.00 \\
+40 & 0.921 \; $-$0.002 & 0.932 \; $+$0.001 & 0.958 \; $-$0.000 & 0.973 \; $+$0.003 & 0.80 \\
+50 & 0.888 \; $-$0.002 & 0.897 \; $-$0.001 & 0.914 \; $-$0.004 & 0.945 \; $-$0.001 & 0.34 \\
+60 & 0.841 \; $-$0.000 & 0.853 \; $-$0.000 & 0.862 \; $+$0.001 & 0.891 \; $+$0.008 & 0.80 \\
+75 & 0.778 \; $-$0.000 & 0.795 \; $-$0.003 & 0.819 \; $+$0.001 & 0.851 \; $-$0.004 & 0.80 \\
+\midrule
+\multicolumn{6}{@{}l@{}}{Median change over all 20 cells: $\mathbf{-0.0003}$.
+Significant wins: \textbf{0}. Losses: \textbf{0}.} \\
+\bottomrule
+\end{tabular}
+\end{table}
+% ---------------------------------------------------------------------------
+
+% ---------------------------------------------------------------------------
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.3}
+\caption{Frames to Commit, Held-Out, $\sigma = 40$\,px. Amplification Does Not
+Shorten Dwell; Forced to Act, It Lengthens the Mean and Costs Accuracy.}
+\label{tab:dwell}
+\centering
+\footnotesize
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Rule} & \textbf{Median} & \textbf{Mean} & \textbf{Accuracy} \\
+\midrule
+Log-linear (deployed)            & 2.0 & \textbf{2.63} & \textbf{0.984} \\
+Interference only                & 2.0 & 2.66 & 0.988 \\
+Amplification, pre-conditioning  & 2.0 & 2.80 & 0.964 \\
+Amplification, post-conditioning$^{\ddagger}$ & 2.0 & 2.80 & 0.968 \\
+Interference $+$ amplification   & 2.0 & 2.75 & 0.964 \\
+\bottomrule
+\multicolumn{4}{@{}p{7.6cm}@{}}{\footnotesize $^{\ddagger}$Zero rounds fire:
+after conditioning the admissible subspace already holds $94$--$98\,\%$ of the
+amplitude. Paired over the 249 keystrokes committed by both arms, $p = 0.48$.}
+\end{tabular}
+\end{table}
+% ---------------------------------------------------------------------------
+
+% ---------------------------------------------------------------------------
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.3}
+\caption{Why Interference Fails. Coherence on the Correct Letter Against the
+Wrong Ones. A \emph{Positive} Separation Would Mean Interference Protects the
+Correct Letter; It Is Negative Everywhere and Worsens With Scale.}
+\label{tab:coherence}
+\centering
+\footnotesize
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$\sigma_\varphi$ & $\lvert c \rvert$ \textbf{correct} &
+$\lvert c \rvert$ \textbf{wrong} & \textbf{Separation} \\
+\midrule
+0.2 & 0.9934 & 0.9971 & $-0.0038$ \\
+0.4$^{*}$ & 0.9740 & 0.9887 & $-0.0147$ \\
+0.8 & 0.9046 & 0.9572 & $-0.0526$ \\
+1.0 & 0.8607 & 0.9357 & $-0.0750$ \\
+2.0 & 0.7691 & 0.8768 & $\mathbf{-0.1076}$ \\
+\bottomrule
+\multicolumn{4}{@{}l@{}}{\footnotesize $^{*}$Scale selected on the training split.}
+\end{tabular}
+\end{table}
+% ---------------------------------------------------------------------------
+
+% ---------------------------------------------------------------------------
+\begin{figure}[!t]
+\centering
+\figholder{5.6cm}{%
+  \textbf{Fig.~5 placeholder --- the accuracy/prompt-rate frontier}\\[4pt]
+  Commit accuracy against prompt rate, one curve per arm,\\
+  at $\sigma = 40$ and $\sigma = 60$\,px. The two curves should\\
+  overlie each other almost exactly --- that \emph{is} the result.\\[6pt]
+  Inset: coherence separation against phase scale, crossing\\
+  zero nowhere and falling monotonically.\\[8pt]
+  \emph{Replace with} \texttt{\textbackslash includegraphics[width=\textbackslash linewidth]\{fig\_selection\}}}
+\caption{The selection rule traces the same accuracy/prompt-rate frontier as the
+fusion it generalises. The inset gives the reason: the coherence penalty is
+anti-correlated with correctness at every phase scale.}
+\label{fig:selection}
+\end{figure}
+% ---------------------------------------------------------------------------
+
+
+\section{Negative Results}
+
+We record the following because each was implemented and measured, and because
+the cost of re-attempting them is otherwise borne by the next group. The first
+two are the subject of Section~\ref{sec:ruleresult} and are restated here only
+so the list is complete.
+
+\textbf{Phase interference between language hypotheses.} Median $-0.03$
+percentage points at matched prompt rate; no significant win or loss at any of
+five noise levels. Retained as a research module, not deployed. The mechanism of
+the failure is a sign rather than a magnitude (Section~\ref{sec:why}).
+
+\textbf{Amplitude amplification on the consistency oracle.} Zero rounds fire
+after conditioning, because the admissible subspace is not rare. Forced to act,
+mean dwell rises from $2.63$ to $2.80$ frames and commit accuracy falls from
+$98.4\,\%$ to $96.4\,\%$.
+
+\textbf{Quantum-kernel regression.} A fidelity kernel
+$K(x,z)=|\langle\phi(x)|\phi(z)\rangle|^2$ was evaluated in place of the linear
+model, using both angle and ZZ~\cite{ref15} feature maps at 12 qubits. The angle map
+scored $-104\,\%$ against the linear baseline and the ZZ map $-989\,\%$. The
+failure of the latter is the expected exponential
+concentration~\cite{ref16}: at 12 qubits the fidelity
+between deliberately similar samples falls to $0.005$, the Gram matrix approaches
+the identity, and the model can only memorise. A classical Gaussian kernel on the
+same features scored $+9.7\,\%$. We note additionally that the angle-map kernel
+is a product of per-feature cosines and therefore classically simulable; no
+quantum advantage is claimed or observed.
+
+\textbf{Nonlinear regression generally.} A tuned RBF kernel ridge regressor beat
+the linear model by $20.2\,\%$ on the eyelid-relative features but by only
+$0.5\,\%$ once canthus normalisation was present. The curvature the kernel was
+modelling was an artefact of the contaminated feature, not a property of gaze
+geometry.
+
+\textbf{Discrete hierarchical selection.} Two-level region selection is
+$\sim$20 percentage points more reliable per choice than pointing directly at a
+key ($55.0$/$68.8\,\%$ against $35.2$/$46.5\,\%$), but doubling the dwells costs
+more than the reliability returns: throughput falls from $18.5$ to $14.4$ and
+from $24.4$ to $18.1$ correct letters per minute.
+
+\textbf{Eye-region de-rotation.} Given that landmark jitter grows $5.5\times$
+under roll, de-rotating the frame before detection --- presenting the detector
+with an upright face --- is an obvious remedy. Implemented with an exact inverse
+mapping, it produced no perceptible gain in live use. We suspect the detector's
+internal face alignment already performs this normalisation.
+
+
+\section{Limitations}
+\label{sec:limits}
+
+The results rest on \textbf{three recorded sessions of a single participant}.
+This is sufficient to establish a direction --- the canthus effect is large and
+consistent in sign across all three --- but not to establish an effect size that
+will generalise, and we do not report significance testing. Inter-personal
+variation in eye geometry is precisely what a canthus-relative frame is supposed
+to be robust to, which makes a multi-participant study the natural next step and
+the most informative one.
+
+The mechanism argument, that eyelid aperture contaminates the vertical channel,
+is supported by the ablation and by the asymmetry reported in~\cite{ref01}, but
+is not yet demonstrated causally. The decisive experiment is a session in which
+eyelid aperture is deliberately perturbed --- prompted squinting --- while gaze
+target is held fixed. The prediction is specific: eyelid-relative features should
+degrade sharply and canthus-relative features should not.
+
+The selection-rule results carry a different set of caveats. They come from
+simulation rather than from live typing: the gaze likelihood is the deployed
+key-rectangle integral driven by Gaussian noise at controlled $\sigma$, which
+models isotropic error and not the anisotropic, temporally correlated error a
+real tracker produces. The dwell measurement discounts each frame to a quarter
+of an independent observation to stand in for that correlation, but the discount
+is a stipulation rather than a measurement. The negative result is also specific
+to one vocabulary and one language: our claim is that likelihood-derived phase
+is mis-signed for English letter prediction, not that interference-based fusion
+is useless in general. A task supplying a phase source genuinely orthogonal to
+the likelihood --- multimodal evidence, or a syntactic signal independent of
+frequency --- would be a fair test of the mechanism and we have not run one.
+
+Finally, all sessions were recorded at one display and one nominal viewing
+distance. The degrees conversion is measured rather than assumed, but the
+generalisation across geometries is untested.
+
+
+\section{Conclusion}
+
+We set out to improve how a gaze keyboard decides, and improved how it estimates
+instead.
+
+The quantum conditional selection rule is a strict generalisation of the
+log-linear fusion that gaze keyboards conventionally use. It places candidates
+in superposition with gaze-derived amplitudes, conditions them on language
+through both magnitude and phase, constrains them with a consistency-preserving
+oracle, and commits by the Born rule. It recovers the incumbent exactly at zero
+phase, and its interference cross-terms are provably beyond any classical
+mixture of the same hypotheses. Measured against that incumbent on identical
+noise at matched prompt rate, it is worth a median $-0.03$ percentage points,
+and amplitude amplification lengthens dwell rather than shortening it.
+
+We regard the explanation as the more durable contribution. Interference fails
+here for a reason that no retuning addresses: the correct letter after an
+English prefix is the one with the richest vocabulary support, hence the most
+hypotheses, the widest phase spread and the lowest coherence. The measured
+separation between the coherence of correct and incorrect letters is negative at
+every phase scale and worsens monotonically with it. Phase derived from
+hypothesis likelihood penalises exactly the evidence it should reward. For
+interference to be useful, phase must come from a source orthogonal to the
+magnitude --- and a language model does not provide one.
+
+The accuracy came from the front end. Measuring the continuous coordinate in
+degrees, rather than as region classification, surfaced a defect in a step the
+literature treats as settled: normalising the iris offset by the eyelid aperture
+couples the vertical gaze channel to a structure that moves independently of
+gaze. Normalising against the canthi instead reduces held-out error by
+$26.5\,\%$, wins on every recorded session, explains an axis asymmetry reported
+but undiagnosed in prior work, and makes an explicit head-pose stage
+unnecessary. The change is four features and no additional runtime cost. We also
+find that the error budget inverts with posture --- from $5.3\,\%$ per-frame
+noise with a still head to $57.9\,\%$ beyond $10^\circ$ of roll --- and that the
+added instability originates in the landmark detector rather than the regressor.
+
+Immediate future work is the eyelid-perturbation experiment described in
+Section~\ref{sec:limits}, which would convert the canthus mechanism from a
+supported inference into a demonstrated one, and a multi-participant study to
+establish whether the effect size holds across eye geometries. For the selection
+rule, the open question is whether a phase source orthogonal to likelihood
+exists for this task; until one does, we report the rule as a formal
+generalisation whose empirical value is nil, and we would rather say so than
+leave the next group to discover it.
+
+
+\section*{Acknowledgment}
+
+The authors thank \dots
+
+\vspace{4pt}
+\noindent\textbf{Reproducibility.} The evaluation harness, the recording
+protocol, and the per-session results are available with the implementation.
+
+
+\begin{thebibliography}{10}
+\footnotesize
+
+\bibitem{ref01}
+B.~Waideman and P.~T. Aquino Junior, ``Augmentative and alternative
+communication using eye tracking and word recommendation using language
+models,'' \emph{IEEE Latin America Transactions}, vol.~23, no.~8, pp.~637--646,
+Aug. 2025, doi: 10.1109/TLA.2025.11072932.
+
+\bibitem{ref02}
+M.~R. Islam, M.~S. Rahman \emph{et al.}, ``Computer vision based eye gaze
+controlled virtual keyboard for people with quadriplegia,'' in \emph{Proc. 2021
+Int. Conf. Automation, Control and Mechatronics for Industry 4.0 (ACMI)},
+Rajshahi, Bangladesh, Jul. 2021, doi: 10.1109/ACMI53878.2021.9528213.
+
+\bibitem{ref03}
+V.~Abhaya, A.~S. Bharadwaj, C.~C. Bagan, K.~Dhanraj, and G.~Shyamala,
+``Eye-Move: An eye gaze typing application with OpenCV and Dlib library,'' in
+\emph{Proc. 2022 Int. Conf. Automation, Computing and Renewable Systems
+(ICACRS)}, 2022, doi: 10.1109/ICACRS55517.2022.10029276.
+
+\bibitem{ref04}
+S.~T.~S. Rafid, A.~J. Ajwad, and A.~K.~M.~A.~M. Azad, ``Empowering quadriplegic
+patients: A computer vision based approach for keyboard control using eye gaze
+and blink,'' in \emph{Proc. 2023 26th Int. Conf. Computer and Information
+Technology (ICCIT)}, Cox's Bazar, Bangladesh, Dec. 2023,
+doi: 10.1109/ICCIT60459.2023.10441390.
+
+\bibitem{ref05}
+B.~G. Varshini, A.~Manimegalai, and S.~D. Abirami, ``Eye-gaze controlled virtual
+keyboard using blink detection for accessible hands-free communication,'' in
+\emph{Proc. 2025 Int. Conf. Computing and Communication Technologies
+(ICCCIT)}, 2025, doi: 10.1109/ICCCIT62592.2025.10927769.
+
+\bibitem{ref06}
+``Eye gaze tracking for virtual mouse control using computer vision,'' in
+\emph{Proc. 2026 4th Int. Conf. Artificial Intelligence and Machine Learning
+Applications (AIMLA)}, 2026, doi: 10.1109/AIMLA67915.2026.11522321.
+
+\bibitem{ref07}
+K.~Kathpal, S.~Negi, and S.~Sharma, ``iChat: Interactive eyes for specially
+challenged people using OpenCV Python,'' in \emph{Proc. 2021 9th Int. Conf.
+Reliability, Infocom Technologies and Optimization (ICRITO)}, Noida, India,
+2021, doi: 10.1109/ICRITO51393.2021.9596502.
+
+\bibitem{ref08}
+V.~I. Saraswati, R.~Sigit, and T.~Harsono, ``Eye gaze system to operate virtual
+keyboard,'' in \emph{Proc. Int. Electronics Symp.}, Electronics Engineering
+Polytechnic Institute of Surabaya, Indonesia, ISBN 978-1-5090-1640-2.
+
+\bibitem{ref09}
+M.~Cabatuan \emph{et al.}, ``Implementation of eye gaze tracking technique on
+FPGA-based on-screen keyboard system using Verilog and MATLAB,'' in \emph{Proc.
+2017 IEEE Region 10 Conf. (TENCON)}, Malaysia, Nov. 2017, pp.~2772--2777.
+
+\bibitem{ref09b}
+X.~Zhou \emph{et al.}, ``Dwell time adaptive three-way text entry by gaze,'' in
+\emph{Proc. 31st Chinese Control and Decision Conf. (CCDC)}, Nanjing, China,
+2019, pp.~5297--5301.
+
+\bibitem{ref10}
+C.~Lugaresi \emph{et al.}, ``MediaPipe: A framework for building perception
+pipelines,'' \emph{arXiv:1906.08172}, 2019.
+
+\bibitem{ref11}
+G.~Casiez, N.~Roussel, and D.~Vogel, ``The one Euro filter: A simple speed-based
+low-pass filter for noisy input in interactive systems,'' in \emph{Proc. ACM
+CHI}, 2012, pp.~2527--2530.
+
+\bibitem{ref12}
+T.~Soukoreff and I.~S. MacKenzie, ``Metrics for text entry research,'' in
+\emph{Proc. ACM CHI}, 2003, pp.~113--120.
+
+\bibitem{ref13}
+G.~Brassard, P.~H{\o}yer, M.~Mosca, and A.~Tapp, ``Quantum amplitude
+amplification and estimation,'' in \emph{Quantum Computation and Information},
+AMS Contemporary Mathematics, vol.~305, 2002, pp.~53--74.
+
+\bibitem{ref14}
+L.~K. Grover, ``A fast quantum mechanical algorithm for database search,'' in
+\emph{Proc. 28th Annu. ACM Symp. Theory of Computing (STOC)}, 1996,
+pp.~212--219.
+
+\bibitem{ref15}
+V.~Havl\'{\i}\v{c}ek, A.~D. C\'orcoles, K.~Temme, A.~W. Harrow, A.~Kandala,
+J.~M. Chow, and J.~M. Gambetta, ``Supervised learning with quantum-enhanced
+feature spaces,'' \emph{Nature}, vol.~567, pp.~209--212, 2019.
+
+\bibitem{ref16}
+S.~Thanasilp, S.~Wang, M.~Cerezo, and Z.~Holmes, ``Exponential concentration in
+quantum kernel methods,'' \emph{Nature Communications}, vol.~15, art.~5200,
+2024.
+
+\bibitem{ref17}
+P.~O. Kristensson and S.~Zhai, ``SHARK$^2$: A large vocabulary shorthand writing
+system for pen-based computers,'' in \emph{Proc. ACM UIST}, 2004, pp.~43--52.
+
+\end{thebibliography}
+
+\end{document}

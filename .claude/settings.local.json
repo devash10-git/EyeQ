@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m pip install --quiet pypandoc-binary)",
+      "Bash(python3 -c \"import pypandoc; print\\('pandoc', pypandoc.get_pandoc_version\\(\\)\\)\")",
+      "Bash(export PUPPETEER_SKIP_DOWNLOAD=1)",
+      "Bash(npx -y @mermaid-js/mermaid-cli@11 -i mmd/fig1_1.mmd -o img/fig1_1.png -p puppeteer.json -b white -t neutral -s 2)"
+    ]
+  }
+}

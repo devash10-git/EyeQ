@@ -1,0 +1,68 @@
+@page { size: Letter; margin: 0.8in; }
+
+body {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12pt;
+  line-height: 1.12;
+  color: #000;
+}
+
+h1 {
+  font-size: 14pt;
+  font-weight: bold;
+  page-break-before: always;
+  margin: 0 0 .45em;
+  padding-bottom: .15em;
+  border-bottom: 1.5px solid #333;
+}
+h2 { font-size: 13pt; font-weight: bold; margin: .6em 0 .3em; }
+h3 { font-size: 12pt; font-weight: bold; margin: .5em 0 .25em; }
+
+p { text-align: justify; margin: 0 0 .34em; }
+
+img { max-width: 100%; display: block; margin: .6em auto .15em; page-break-inside: avoid; }
+
+/* Table of Contents */
+.toc h1 { page-break-before: avoid; }
+.toctable { width: 100%; border-collapse: collapse; margin: .6em 0; font-size: 12pt; }
+.toctable th, .toctable td { border: 1px solid #999; padding: 5px 10px; }
+.toctable th { background: #eee; font-weight: bold; }
+.toctable td:first-child, .toctable th:first-child { text-align: center; width: 12%; }
+.toctable td:last-child, .toctable th:last-child { text-align: center; width: 12%; }
+
+/* code / pseudocode */
+pre {
+  background: #f6f6f4;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 6px 9px;
+  font-family: "Courier New", "Consolas", monospace;
+  font-size: 9pt;
+  line-height: 1.32;
+  white-space: pre;
+  overflow-x: auto;
+  page-break-inside: avoid;
+  margin: .3em 0 .5em;
+}
+code { font-family: "Courier New", "Consolas", monospace; font-size: 10.5pt; }
+pre code { font-size: inherit; }
+
+/* tables */
+table { border-collapse: collapse; width: 100%; margin: .45em 0 .6em; font-size: 10.5pt; page-break-inside: avoid; }
+th, td { border: 1px solid #999; padding: 3px 6px; text-align: left; vertical-align: top; }
+th { background: #eee; font-weight: bold; }
+
+/* screenshot placeholders */
+blockquote {
+  border: 1px dashed #999;
+  background: #fafaf7;
+  margin: .5em 0;
+  padding: 6px 12px;
+  color: #444;
+  font-style: italic;
+}
+blockquote p { text-align: left; margin: 0; }
+
+math { font-size: 1.0em; }
+ul, ol { margin: 0 0 .5em 1.4em; }
+li { margin: .12em 0; text-align: justify; }
