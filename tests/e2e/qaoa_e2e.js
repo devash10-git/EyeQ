@@ -20,6 +20,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const consoleErrors = [];
   page.on("pageerror", (e) => consoleErrors.push(String(e)));
   await page.goto("http://127.0.0.1:8321", { waitUntil: "networkidle2", timeout: 30000 });
+  // The keyboard now ships the cluster layout by default; this suite exercises
+  // the per-letter keyboard, which is still available behind the toggle.
+  await page.waitForFunction(() => window.__gaze && window.__gaze.setLayout);
+  await page.evaluate(() => window.__gaze.setLayout("letters"));
+
   await sleep(800);
 
   const T = {};

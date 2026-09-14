@@ -26,6 +26,11 @@ const PORT = process.env.PORT || "8321";
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "domcontentloaded" });
+  // The keyboard now ships the cluster layout by default; this suite exercises
+  // the per-letter keyboard, which is still available behind the toggle.
+  await page.waitForFunction(() => window.__gaze && window.__gaze.setLayout);
+  await page.evaluate(() => window.__gaze.setLayout("letters"));
+
   await sleep(1500);
 
   // Mouse mode: the pointer is exact, so any wrong letter is the dwell path's

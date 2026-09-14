@@ -62,6 +62,12 @@ def suggest(prefix: str = "", n: int = 6):
     return {"words": decoder.suggest(prefix, n)}
 
 
+@app.get("/api/cluster_suggest")
+def cluster_suggest(code: str = "", n: int = 6):
+    # candidate words for a partially gazed cluster code, for the cluster keyboard
+    return {"code": code, "words": decoder.suggest_by_code(code, n)}
+
+
 @app.get("/api/letter_prior")
 def letter_prior(prefix: str = ""):
     # P(next letter | word typed so far); "$" = end-of-word (SPACE)

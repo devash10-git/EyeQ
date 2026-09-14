@@ -278,3 +278,35 @@ label.toggle { font-size: 15px; color: #555; display: block; margin-top: 10px; c
   display: none;
   pointer-events: none;
 }
+
+/* ---- cluster layout -------------------------------------------------- */
+/* Each cluster key stands in for a whole QWERTY region. They are deliberately
+   large: measured gaze error is 1.0-1.7x the width of a single letter key but
+   only 0.30-0.50x a cluster, and that ratio is the difference between a dwell
+   that commits and one that can only offer choices. */
+/* The wrappers must themselves be flex columns, or their rows collapse to
+   content height and the targets end up wide but short -- which defeats the
+   point. Measured: at a 400x96 key the fused posterior peaked at 0.33 and
+   never committed, because sigma (117px) exceeded the row height. Letting the
+   rows divide the keyboard height makes each cluster tall as well as wide. */
+/* The keyboard, not the header, is the thing the user aims at, so it takes the
+   bulk of the viewport; and the cluster pane outweighs the space/backspace row
+   3:1 rather than sharing height equally with it.
+   Grid shape is chosen from measurement, not taste: at the recorded gaze sigma
+   a 4x2 arrangement of the eight clusters reaches a top posterior of 0.81 once
+   the keyboard is ~500px tall, where 3x3 peaks at 0.70 and 2x4 at 0.58. */
+#keyboard { min-height: 62vh; }
+#kb-clusters, #kb-letters { flex: 3; display: flex; flex-direction: column; gap: 10px; }
+#keyboard > .krow-bottom { flex: 1; }
+header { flex: 0 0 auto; }
+#kb-clusters[hidden], #kb-letters[hidden] { display: none; }
+#kb-clusters .krow { gap: 14px; }
+.key-cluster { font-size: 1.5rem; letter-spacing: 0.08em; font-weight: 600; }
+
+/* The cluster code being built, shown inline in the typing area so the user
+   can see the word forming before SPACE resolves it. */
+.label .pending {
+  color: #8a6d1f; background: #fdf3d8; border-radius: 8px;
+  padding: 0 6px; margin-left: 2px; font-variant-numeric: tabular-nums;
+}
+.label .pending-word { color: #b08a2a; font-style: italic; margin-left: 6px; }

@@ -199,6 +199,32 @@ class HybridDecoder:
     def candidates_for_code(self, code):
         return self.code_to_words.get(code, [])[: self.max_candidates]
 
+    def suggest_by_code(self, code_prefix, n=6):
+        """Top-n words whose cluster code *starts with* ``code_prefix``.
+
+        The cluster keyboard needs this while a word is still being built: the
+        user has gazed three regions and wants to see where that is heading.
+        ``candidates_for_code`` only answers for a completed code, so this scans
+        the code index by prefix and ranks by frequency.
+
+        Returns ``(word, code, exact)`` triples, exact marking the candidates
+        whose code matches ``code_prefix`` in full rather than merely starting
+        with it -- those are the ones SPACE would commit right now.
+        """
+        code_prefix = "".join(ch for ch in str(code_prefix) if ch.isdigit())
+        if not code_prefix:
+            return []
+        hits = []
+        for code, words in self.code_to_words.items():
+            if code.startswith(code_prefix):
+                exact = code == code_prefix
+                for w, c in words[: self.max_candidates]:
+                    hits.append((w, code, exact, c))
+        # exact-length matches first, then by frequency
+        hits.sort(key=lambda t: (not t[2], -t[3]))
+        return [{"word": w, "code": code, "exact": exact}
+                for w, code, exact, _ in hits[:n]]
+
     def suggest(self, prefix, n=6):
         """Top-n vocabulary words starting with `prefix`, most frequent first.
 

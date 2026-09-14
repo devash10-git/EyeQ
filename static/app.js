@@ -67,7 +67,49 @@ const QGAZE_BETA = 0.5;      // quantum gaze-stack exponent (advisory, not a vet
 const QGAZE_FLOOR = 1e-3;    // a letter outside its top-5 is unlikely, not banned
 
 const keyboard = document.getElementById("keyboard");
+const letterKeysToggle = document.getElementById("letter-keys");
+if (letterKeysToggle) {
+  letterKeysToggle.checked = (localStorage.getItem("kb-layout") || "clusters") === "letters";
+  letterKeysToggle.addEventListener("change", () => {
+    layoutMode = letterKeysToggle.checked ? "letters" : "clusters";
+    applyLayout();
+  });
+}
 const keys = [...document.querySelectorAll(".key")];
+const kbClusters = document.getElementById("kb-clusters");
+const kbLetters = document.getElementById("kb-letters");
+
+/* ---------------- cluster layout ----------------
+ * Each key is a whole QWERTY region rather than one letter. The reason is
+ * measured, not aesthetic: gaze error on the recorded sessions is 1.0-1.7x the
+ * width of a single letter key, so the fused posterior almost never clears
+ * THETA and dwelling produces choice chips instead of text. A cluster is ~3x
+ * wider, putting the error at 0.30-0.50x the target, which is what makes a
+ * one-dwell commit possible at all.
+ *
+ * The cost is ambiguity: "hello" and "fellow" both gaze as 51663. The word is
+ * therefore resolved at the space, by decoder.py, whose consistency oracle
+ * guarantees whatever comes back re-encodes to exactly the clusters gazed. */
+let layoutMode = localStorage.getItem("kb-layout") || "clusters";
+let clusterCode = "";        // digits of the word currently being gazed
+let codeWords = [];          // completed word codes, for sentence-level decoding
+let clusterCands = [];       // live candidates for clusterCode
+let clusterToken = 0;        // guards out-of-order candidate fetches
+let lastDecode = null;       // last /api/decode response (diagnostics/tests)
+
+function activeKeys() {
+  const pane = layoutMode === "clusters" ? kbClusters : kbLetters;
+  return keys.filter(k => !pane || pane.contains(k) || k.dataset.action);
+}
+
+function applyLayout() {
+  const clusters = layoutMode === "clusters";
+  if (kbClusters) kbClusters.hidden = !clusters;
+  if (kbLetters) kbLetters.hidden = clusters;
+  localStorage.setItem("kb-layout", layoutMode);
+  clusterCode = ""; codeWords = []; clusterCands = [];
+  renderLabel();
+}
 const cursor = document.getElementById("cursor");
 const ring = document.getElementById("dwell-ring");
 const labelEl = document.getElementById("label");
@@ -130,6 +172,19 @@ function esc(s) {
 
 function renderLabel() {
   refreshLetterPrior(); // keep P(next letter | prefix) hot for the next commit
+  if (layoutMode === "clusters") {
+    const done = text.trim();
+    if (!done && !clusterCode) {
+      labelEl.innerHTML = `<span class="placeholder">Type something\u2026</span>`;
+      return;
+    }
+    const best = clusterCands.find(c => c.exact) || clusterCands[0];
+    labelEl.innerHTML =
+      (done ? `<span class="tok-word">${esc(done)}</span>` : "") +
+      (clusterCode ? `<span class="pending">${esc(clusterCode)}</span>` : "") +
+      (clusterCode && best ? `<span class="pending-word">${esc(best.word)}</span>` : "");
+    return;
+  }
   if (!text) {
     labelEl.innerHTML = `<span class="placeholder">Type something\u2026</span>`;
     renderChips([]);
@@ -240,7 +295,7 @@ function gazeSigmaPx() {
 function keyPosterior(mu, sig) {
   const out = [];
   let total = 0;
-  for (const k of keys) {
+  for (const k of activeKeys()) {
     const r = k.getBoundingClientRect();
     const px = (normCdf(r.right, mu.x, sig.sx) - normCdf(r.left, mu.x, sig.sx)) *
                (normCdf(r.bottom, mu.y, sig.sy) - normCdf(r.top, mu.y, sig.sy));
@@ -260,6 +315,36 @@ function smartCommit(domKey, at) {
 
   // backspace is an editing action — decided by gaze alone
   if (cands[0].action === "backspace") { commit(cands[0].el); return; }
+
+  /* Cluster layout: the decision is which *region* was gazed, so the language
+   * evidence has to be lifted to regions too. P(cluster) is the sum of
+   * P(letter) over the letters that cluster contains, which is exact rather
+   * than a re-tuned approximation. */
+  if (layoutMode === "clusters" && cands.some(c => c.el.dataset.cluster)) {
+    const prefix = clusterCode;
+    const cp = clusterPrior();
+    const scored = cands
+      .filter(c => c.el.dataset.cluster || c.action === "space")
+      .map(c => {
+        const d = c.el.dataset.cluster;
+        const lm = d ? Math.max(cp[d] ?? 0, LM_FLOOR) : Math.max(cp["$"] ?? 0, LM_FLOOR);
+        return { ...c, digit: d, score: c.pGaze * Math.pow(lm, LM_BETA) };
+      });
+    if (!scored.length) { commit(domKey); return; }
+    const zc = scored.reduce((a, c) => a + c.score, 0) || 1;
+    scored.forEach(c => c.p = c.score / zc);
+    scored.sort((a, b) => b.p - a.p);
+    lastFused = scored.map(c => ({ key: c.digit || "space", p: +c.p.toFixed(4) }));
+    const best = scored[0];
+    if (best.p >= THETA) {
+      best.el.classList.add("flash");
+      setTimeout(() => best.el.classList.remove("flash"), 200);
+      if (best.digit) applyCluster(best.digit); else applySpace();
+    } else {
+      renderChoiceChips(scored.slice(0, 3));
+    }
+    return;
+  }
 
   // Quantum-kernel movement gate: refuse to type from a window the classifier
   // says was a saccade or blink, where the iris position is not trustworthy.
@@ -351,6 +436,63 @@ function smartCommit(domKey, at) {
   renderChoiceChips(fused.slice(0, 3)); // not sure -> ask, never guess
 }
 
+const CLUSTER_MEMBERS = {
+  "1": "qwe", "2": "rtyu", "3": "iop", "4": "asd",
+  "5": "fgh", "6": "jkl", "7": "zxcv", "9": "bnm",
+};
+
+/* P(next cluster | prefix), lifted exactly from P(next letter | prefix). */
+function clusterPrior() {
+  const prior = (letterPrior && letterPrior.prefixIsCode) ? letterPrior.prior : null;
+  const out = {};
+  for (const [d, members] of Object.entries(CLUSTER_MEMBERS)) {
+    let sum = 0;
+    for (const ch of members) sum += (prior ? (prior[ch] ?? 0) : 1 / 26);
+    out[d] = sum;
+  }
+  out["$"] = prior ? (prior["$"] ?? 0) : 1 / 26;
+  return out;
+}
+
+function applyCluster(digit) {
+  clusterCode += digit;
+  refreshClusterCands();
+  renderLabel();
+}
+
+/* Resolve the gazed clusters into words. The whole sentence is sent, not just
+ * the last word, so the decoder's bigram context applies; its consistency
+ * oracle guarantees the result re-encodes to exactly these clusters. */
+async function decodeClusters() {
+  const seq = codeWords.join(" ");
+  if (!seq) { text = ""; renderLabel(); return; }
+  try {
+    const res = await fetch("/api/decode", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clusters: seq }),
+    });
+    const data = await res.json();
+    text = (data.text || "") + " ";
+    lastDecode = data;
+  } catch (_) {
+    text = seq + " ";          // offline: show the codes rather than losing them
+  }
+  renderLabel();
+}
+
+async function refreshClusterCands() {
+  if (!clusterCode) { clusterCands = []; renderChips([]); return; }
+  const token = ++clusterToken;
+  try {
+    const res = await fetch("/api/cluster_suggest?n=6&code=" + encodeURIComponent(clusterCode));
+    const data = await res.json();
+    if (token !== clusterToken) return;
+    clusterCands = data.words || [];
+  } catch (_) { clusterCands = []; }
+  renderChips(clusterCands.map(c => c.word));
+  renderLabel();
+}
+
 function applyLetter(ch, evidence) {
   chipsMode = "words";
   text += ch;
@@ -361,6 +503,19 @@ function applyLetter(ch, evidence) {
 
 function applyBackspace() {
   chipsMode = "words";
+  if (layoutMode === "clusters") {
+    // peel the partial code first, then step back over completed words
+    if (clusterCode) {
+      clusterCode = clusterCode.slice(0, -1);
+      refreshClusterCands();
+      renderLabel();
+    } else if (codeWords.length) {
+      clusterCode = codeWords.pop().slice(0, -1);
+      refreshClusterCands();
+      decodeClusters();
+    }
+    return;
+  }
   if (!text) return;
   if (!text.endsWith(" ")) wordEvidence.pop();
   else wordEvidence = [];   // stepping back across a boundary: evidence is gone
@@ -370,6 +525,14 @@ function applyBackspace() {
 
 function applySpace() {
   chipsMode = "words";
+  if (layoutMode === "clusters") {
+    if (!clusterCode) return;          // nothing gazed yet: space is a no-op
+    codeWords.push(clusterCode);
+    clusterCode = "";
+    clusterCands = [];
+    decodeClusters();
+    return;
+  }
   if (text && !text.endsWith(" ")) {
     const finished = currentWord();
     const evidence = wordEvidence.slice();
@@ -538,7 +701,7 @@ function updateDwell() {
     outsideFrames = 0;
   }
 
-  keys.forEach(k => k.classList.toggle("active", k === key));
+  activeKeys().forEach(k => k.classList.toggle("active", k === key));
   chipEls.forEach(c => c.classList.toggle("active", c === key));
 
   if (key !== dwellKey) {
@@ -1009,11 +1172,15 @@ setInterval(() => {
 window.__gaze = {
   setPoint: (x, y) => moveCursor(x, y),
   state: () => ({ text, preview: labelEl.textContent,
+                  layout: layoutMode, clusterCode, codeWords: [...codeWords],
+                  clusterCands: clusterCands.map(c => c.word), lastDecode,
                   chips: chipEls.map(c => c.dataset.word || c.dataset.choice || c.dataset.fix),
                   chipsMode, lastFused, priorPrefix: letterPrior?.prefix ?? null,
                   mouseMode, gazeReady, cameraState, faceState, lastError, predictionCount,
                   calibrated: calibratedCorners.size, banner: banner.textContent }),
   commitLetter: (ch) => { const k = keys.find(k => k.dataset.letter === ch); if (k) commit(k); },
+  commitCluster: (d) => { const k = keys.find(k => k.dataset.cluster === d); if (k) smartCommit(k); },
+  setLayout: (m) => { layoutMode = m; applyLayout(); },
   commitAction: (a) => { const k = keys.find(k => k.dataset.action === a); if (k) commit(k); },
   smartCommitAt: (x, y) => { point = { x, y }; smartCommit(keyAt(x, y) || keys[0]); },
   setSigma: (px) => { sigmaOverride = px == null ? null : { sx: px, sy: px }; },
@@ -1044,4 +1211,5 @@ window.__gaze = {
   getTracker: () => tracker,
 };
 
+applyLayout();   // sets the keyboard to the stored layout and renders the label
 renderLabel(); // paint the initial placeholder
