@@ -43,6 +43,22 @@ const MOUSE_SIGMA_PX = 6;    // pointer is near-exact: posterior ≈ hit test
  *   0.70 -> 96.1% / 17%      0.90 -> 99.6% / 30%      0.99 -> 100% / 60%
  * LM_BETA=0.70 measured best (85.9% vs 85.2% at 0.55); above ~0.85 the
  * language prior starts overriding correct gaze evidence and accuracy falls. */
+/* THETA is reached far less often than the tuning above suggests, and the
+ * reason is geometry rather than the constant. Measured on the three recorded
+ * sessions, the gaze error is 1.0-1.7x the width of a QWERTY key (4.7 deg
+ * against 4.2 deg, 3.4 against 3.4, 5.1 against 3.1), so a single key is at or
+ * below the tracker's resolution. Only 10.4%, 2.9% and 0.3% of fixations clear
+ * 0.80, and dwelling on a key therefore shows choice chips rather than typing.
+ *
+ * Lowering the bar does not fix it -- it was tried and measured. Targeting a
+ * 25% prompt rate raises typing to 43-63% but drops commit accuracy to 20-42%
+ * and raises wrong commits from 3.1 to 37 per 100; sweeping the target from
+ * 0.25 to 0.90 leaves accuracy flat at 20-47% throughout, while the commits
+ * that do clear 0.80 are 70-100% correct. The threshold is refusing for a good
+ * reason, and the chips are the designed path when it does.
+ *
+ * The fix that works is a larger target: on the same sessions a 3x3 cluster
+ * layout puts the error at 0.30-0.50x the target width. See clusters.py. */
 const THETA = 0.80;          // commit only above this fused confidence
 const LM_BETA = 0.70;        // language-prior exponent (gaze stays in charge)
 const LM_FLOOR = 1e-4;       // minimum prior: the LM may advise, never veto
@@ -115,7 +131,7 @@ function esc(s) {
 function renderLabel() {
   refreshLetterPrior(); // keep P(next letter | prefix) hot for the next commit
   if (!text) {
-    labelEl.innerHTML = `<span class="placeholder">Label</span>`;
+    labelEl.innerHTML = `<span class="placeholder">Type something\u2026</span>`;
     renderChips([]);
     return;
   }
