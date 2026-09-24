@@ -1,0 +1,209 @@
+{
+  "features": "canthus",
+  "protocol": "leave-one-target-out, grouped",
+  "arms": {
+    "Ridge (deployed)": {
+      "family": "linear",
+      "deg": 3.867252496289081,
+      "px": 163.49325470802532,
+      "per_session_deg": [
+        4.126744716218492,
+        2.8407967318112934,
+        4.634216040837456
+      ],
+      "fit_ms": 0.05757534947608494,
+      "predict_us": 0.631552693139031,
+      "hyperparams_searched": 0,
+      "closed_form": true,
+      "typing": {
+        "commit_accuracy_pct": 95.32670430393898,
+        "committed": 209.4,
+        "correct": 199.6,
+        "incorrect": 9.8,
+        "presented": 599.0,
+        "prompts": 389.6,
+        "prompt_rate_pct": 65.04173622704508,
+        "wpm": 10.492367839689276,
+        "sigma_kbpx": 113.56001854591868,
+        "commit_accuracy_sd": 1.7429343308924876,
+        "seeds": [
+          7,
+          11,
+          13,
+          17,
+          19
+        ],
+        "per_seed_accuracy": [
+          96.63461538461539,
+          93.5960591133005,
+          98.05825242718447,
+          93.75,
+          94.5945945945946
+        ]
+      }
+    },
+    "Ordinary least squares": {
+      "family": "linear",
+      "deg": 3.7554716204076346,
+      "px": 158.4741582544253,
+      "per_session_deg": [
+        4.0378654974749,
+        2.869194254677463,
+        4.35935510907054
+      ],
+      "fit_ms": 0.179458968295154,
+      "predict_us": 1.967969468575125,
+      "hyperparams_searched": 0,
+      "closed_form": true,
+      "typing": {
+        "commit_accuracy_pct": 95.09255721508788,
+        "committed": 220.4,
+        "correct": 209.6,
+        "incorrect": 10.8,
+        "presented": 599.0,
+        "prompts": 378.6,
+        "prompt_rate_pct": 63.20534223706177,
+        "wpm": 10.610004477061201,
+        "sigma_kbpx": 109.4950943907933,
+        "commit_accuracy_sd": 0.9189938465223426,
+        "seeds": [
+          7,
+          11,
+          13,
+          17,
+          19
+        ],
+        "per_seed_accuracy": [
+          93.57798165137615,
+          94.95412844036697,
+          96.41255605381166,
+          95.02262443438914,
+          95.49549549549549
+        ]
+      }
+    },
+    "Kernel ridge (RBF)": {
+      "family": "non-linear",
+      "deg": 3.5348927052992565,
+      "px": 151.14391854260344,
+      "per_session_deg": [
+        3.224692367528823,
+        3.069006873436485,
+        4.310978874932462
+      ],
+      "fit_ms": 2187.133810841289,
+      "predict_us": 23949.424071451205,
+      "hyperparams_searched": 35,
+      "closed_form": false,
+      "typing": {
+        "commit_accuracy_pct": 95.55819567474414,
+        "committed": 212.2,
+        "correct": 202.8,
+        "incorrect": 9.4,
+        "presented": 599.0,
+        "prompts": 386.8,
+        "prompt_rate_pct": 64.57429048414023,
+        "wpm": 10.521963717926777,
+        "sigma_kbpx": 110.57742534861669,
+        "commit_accuracy_sd": 0.9319123168079467,
+        "seeds": [
+          7,
+          11,
+          13,
+          17,
+          19
+        ],
+        "per_seed_accuracy": [
+          95.79439252336448,
+          94.14634146341463,
+          96.78899082568807,
+          94.9074074074074,
+          96.15384615384616
+        ]
+      }
+    },
+    "MLP (16-8)": {
+      "family": "non-linear",
+      "deg": 4.9107081473319125,
+      "px": 208.61804862176828,
+      "per_session_deg": [
+        4.636368556937792,
+        4.7235970931249955,
+        5.37215879193295
+      ],
+      "fit_ms": 1171.8780371111136,
+      "predict_us": 12940.11547523443,
+      "hyperparams_searched": 0,
+      "closed_form": false,
+      "typing": {
+        "commit_accuracy_pct": 94.0200870044097,
+        "committed": 164.0,
+        "correct": 154.2,
+        "incorrect": 9.8,
+        "presented": 599.0,
+        "prompts": 435.0,
+        "prompt_rate_pct": 72.62103505843072,
+        "wpm": 10.031269998194837,
+        "sigma_kbpx": 140.47643238129442,
+        "commit_accuracy_sd": 2.461588110102632,
+        "seeds": [
+          7,
+          11,
+          13,
+          17,
+          19
+        ],
+        "per_seed_accuracy": [
+          92.02453987730061,
+          90.2439024390244,
+          96.40718562874251,
+          95.15151515151516,
+          96.27329192546584
+        ]
+      }
+    }
+  },
+  "winner_by_axis": [
+    {
+      "axis": "Accuracy \u2014 mean gaze error (deg)",
+      "model": "Kernel ridge (RBF)",
+      "value": "3.535"
+    },
+    {
+      "axis": "Project \u2014 typing commit accuracy",
+      "model": "TIE (Kernel / Ridge)",
+      "value": "95.56% vs 95.33%, gap 0.23 < spread 2.67"
+    },
+    {
+      "axis": "Project \u2014 prompt rate (lower better)",
+      "model": "Ordinary least squares",
+      "value": "63.2%"
+    },
+    {
+      "axis": "Project \u2014 entry rate",
+      "model": "Ordinary least squares",
+      "value": "10.61 wpm"
+    },
+    {
+      "axis": "Efficiency \u2014 fit time",
+      "model": "Ridge (deployed)",
+      "value": "0.06 ms"
+    },
+    {
+      "axis": "Efficiency \u2014 inference",
+      "model": "Ridge (deployed)",
+      "value": "0.63 us"
+    },
+    {
+      "axis": "Cost \u2014 hyperparameters to search",
+      "model": "Ridge (deployed)",
+      "value": "0"
+    }
+  ],
+  "axes_won": {
+    "Kernel ridge (RBF)": 1,
+    "Ordinary least squares": 2,
+    "Ridge (deployed)": 3
+  },
+  "seconds": 213.0
+}

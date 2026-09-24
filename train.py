@@ -33,9 +33,9 @@ def normalize(text):
     """
     text = text.lower()
     text = re.sub(r"[^a-z' ]+", " ", text)
-    '''text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r"(^|\s)'+|'+(\s|$)", " ", text)  # drop free-standing quotes
-    return re.sub(r"\s+", " ", text).strip()'''
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def prepare_dataset(input_csv, output_csv, num_clusters, max_samples=None):

@@ -244,7 +244,22 @@ def info():
         # matching "gaze_letter_active" flag are gone — see the comment on the
         # endpoint below for the measurement that removed them.
         "gaze_letter_loaded": _gaze_stack is not None,
+        "eval_layer": _eval_error or "ready",
     }
+
+
+# Real-time dual-arm evaluation (eval/live_eval.py). Strictly additive: it adds
+# /api/eval/* routes that score each real commit under both selection rules and
+# writes the CSVs. The keyboard's own decision path never calls into it, so the
+# deployed model behaves identically whether or not this import succeeds.
+try:
+    from eval.live_eval import configure as _eval_configure, router as _eval_router
+
+    _eval_configure(letters)
+    app.include_router(_eval_router)
+    _eval_error = ""
+except Exception as _exc:  # noqa: BLE001 - evaluation must never break typing
+    _eval_error = f"{type(_exc).__name__}: {_exc}"
 
 
 @app.get("/")

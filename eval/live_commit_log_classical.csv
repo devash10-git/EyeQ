@@ -1,0 +1,12 @@
+trial,sentence,keystroke_index,ground_truth,prediction,correct,cumulative_accuracy
+1,take a bath,1,t,p,0,0.0
+1,take a bath,2,e,a,0,0.0
+1,take a bath,3,a,a,1,33.333333
+1,take a bath,4,a,b,0,25.0
+1,take a bath,5,h,$,0,20.0
+1,he asked me to,6,h,b,0,16.666667
+1,he asked me to,7,e,z,0,14.285714
+1,he asked me to,8,s,a,0,12.5
+1,he asked me to,9,e,$,0,11.111111
+1,he asked me to,10,d,$,0,10.0
+1,it isnt true,11,i,i,1,18.181818

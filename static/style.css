@@ -278,3 +278,56 @@ label.toggle { font-size: 15px; color: #555; display: block; margin-top: 10px; c
   display: none;
   pointer-events: none;
 }
+
+/* ---- Transcription test session (static/test-session.js, ?test=1) ----
+   A flex SIBLING of #keyboard, not an overlay. body is a flex column and the
+   keyboard is flex:1, so the keyboard shrinks to make room and no key is ever
+   covered -- a fixed overlay hid the bottom two rows, which are exactly what
+   the participant has to gaze at.
+
+   The height is fixed and nothing inside wraps. Key positions and sizes are
+   part of what is being measured, so this bar must never reflow once typing
+   has begun; it may only grow after the session ends (.ts-done). */
+#test-session {
+  flex: 0 0 auto; height: 62px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 14px; overflow: hidden; white-space: nowrap;
+  background: rgba(16, 18, 22, 0.96); color: #e8e8e8;
+  border-bottom: 2px solid #2b7cd3;
+  font: 13px/1.4 system-ui, sans-serif;
+}
+#test-session.ts-floating {            /* only if #keyboard was not found */
+  position: fixed; left: 0; right: 0; top: 0; z-index: 9000;
+}
+#test-session .ts-badge {
+  flex: 0 0 auto; background: #2b7cd3; color: #fff; font-weight: 700;
+  letter-spacing: .06em; padding: 2px 7px; border-radius: 3px; font-size: 10px;
+}
+#test-session .ts-target {
+  flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis;
+  font: 600 26px/1.2 "SF Mono", ui-monospace, Menlo, monospace;
+  letter-spacing: .04em;
+}
+#test-session .ts-target .done { color: #5c6b7a; }
+#test-session .ts-target .now {
+  color: #fff; background: #2b7cd3; border-radius: 3px;
+}
+#test-session .ts-speed {
+  flex: 0 0 auto; font-variant-numeric: tabular-nums; font-weight: 600;
+  color: #7fd1a0; font-size: 14px;
+}
+#test-session .ts-progress {
+  flex: 0 0 auto; color: #9fb4c8; font-variant-numeric: tabular-nums;
+}
+#test-session button {
+  flex: 0 0 auto; background: #333a44; color: #e8e8e8;
+  border: 1px solid #55606e; border-radius: 4px; padding: 4px 10px;
+  cursor: pointer; font-size: 12px;
+}
+#test-session button:hover { background: #445062; }
+
+/* After "end & save" the task is over, so the bar may expand. */
+#test-session.ts-done {
+  height: auto; white-space: normal; padding: 10px 14px; display: block;
+}
+#test-session .ts-result { font-size: 12.5px; line-height: 1.65; }

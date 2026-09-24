@@ -1,0 +1,12 @@
+trial,sentence,keystroke_index,ground_truth,prediction,correct,cumulative_accuracy,top_posterior,decision_latency_ms,rule_used,prefix
+1,take a bath,1,t,p,0,0.0,0.999418,0.1795,quantum,
+1,take a bath,2,e,a,0,0.0,0.999998,0.2538,quantum,p
+1,take a bath,3,a,a,1,33.333333,0.975128,0.2978,quantum,
+1,take a bath,4,a,b,0,25.0,0.938843,0.2457,quantum,a
+1,take a bath,5,h,$,0,20.0,0.996201,0.2709,quantum,a
+1,he asked me to,6,h,b,0,16.666667,0.919923,0.146,quantum,
+1,he asked me to,7,e,z,0,14.285714,0.914393,0.1814,quantum,b
+1,he asked me to,8,s,a,0,12.5,0.993051,0.1358,quantum,
+1,he asked me to,9,e,$,0,11.111111,0.999783,0.2086,quantum,a
+1,he asked me to,10,d,$,0,10.0,0.986001,0.1763,quantum,
+1,it isnt true,11,i,i,1,18.181818,0.836719,0.1141,quantum,

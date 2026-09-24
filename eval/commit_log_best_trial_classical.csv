@@ -1,0 +1,512 @@
+trial,sentence,keystroke_index,ground_truth,prediction,correct,cumulative_accuracy
+1,i feel unwell,1,i,i,1,100.0
+1,i feel unwell,2,e,e,1,100.0
+1,i feel unwell,3,e,e,1,100.0
+1,i feel unwell,4,l,l,1,100.0
+1,i feel unwell,5,n,n,1,100.0
+1,i feel unwell,6,e,e,1,100.0
+1,i feel unwell,7,l,l,1,100.0
+1,i feel unwell,8,l,l,1,100.0
+1,we'll cook,9,w,w,1,100.0
+1,we'll cook,10,e,e,1,100.0
+1,we'll cook,11,l,l,1,100.0
+1,we'll cook,12,l,l,1,100.0
+1,we'll cook,13,c,c,1,100.0
+1,we'll cook,14,o,o,1,100.0
+1,we'll cook,15,o,o,1,100.0
+1,we'll cook,16,k,k,1,100.0
+1,take a bath,17,t,t,1,100.0
+1,take a bath,18,a,a,1,100.0
+1,take a bath,19,k,k,1,100.0
+1,take a bath,20,e,e,1,100.0
+1,take a bath,21,a,a,1,100.0
+1,take a bath,22,b,b,1,100.0
+1,take a bath,23,a,a,1,100.0
+1,take a bath,24,t,t,1,100.0
+1,take a bath,25,h,h,1,100.0
+1,he asked me to,26,h,h,1,100.0
+1,he asked me to,27,e,e,1,100.0
+1,he asked me to,28,a,a,1,100.0
+1,he asked me to,29,s,s,1,100.0
+1,he asked me to,30,k,k,1,100.0
+1,he asked me to,31,e,e,1,100.0
+1,he asked me to,32,d,d,1,100.0
+1,he asked me to,33,e,e,1,100.0
+1,he asked me to,34,o,o,1,100.0
+1,are they gone,35,a,a,1,100.0
+1,are they gone,36,r,r,1,100.0
+1,are they gone,37,e,e,1,100.0
+1,are they gone,38,t,t,1,100.0
+1,are they gone,39,h,h,1,100.0
+1,are they gone,40,e,e,1,100.0
+1,are they gone,41,y,y,1,100.0
+1,are they gone,42,o,o,1,100.0
+1,are they gone,43,n,n,1,100.0
+1,are they gone,44,e,e,1,100.0
+1,he stutters,45,h,h,1,100.0
+1,he stutters,46,e,e,1,100.0
+1,he stutters,47,t,t,1,100.0
+1,he stutters,48,u,u,1,100.0
+1,he stutters,49,t,t,1,100.0
+1,he stutters,50,e,e,1,100.0
+1,he stutters,51,r,r,1,100.0
+1,he stutters,52,s,s,1,100.0
+1,he is crazy,53,h,h,1,100.0
+1,he is crazy,54,e,e,1,100.0
+1,he is crazy,55,i,i,1,100.0
+1,he is crazy,56,s,s,1,100.0
+1,he is crazy,57,c,c,1,100.0
+1,he is crazy,58,r,r,1,100.0
+1,he is crazy,59,a,a,1,100.0
+1,he is crazy,60,z,z,1,100.0
+1,he is crazy,61,y,y,1,100.0
+1,never mind tom,62,e,e,1,100.0
+1,never mind tom,63,v,v,1,100.0
+1,never mind tom,64,e,e,1,100.0
+1,never mind tom,65,r,r,1,100.0
+1,never mind tom,66,m,m,1,100.0
+1,never mind tom,67,i,i,1,100.0
+1,never mind tom,68,n,n,1,100.0
+1,never mind tom,69,d,d,1,100.0
+1,never mind tom,70,t,t,1,100.0
+1,never mind tom,71,o,o,1,100.0
+1,never mind tom,72,m,m,1,100.0
+1,it isn't true,73,t,t,1,100.0
+1,it isn't true,74,s,s,1,100.0
+1,it isn't true,75,n,n,1,100.0
+1,it isn't true,76,t,t,1,100.0
+1,it isn't true,77,t,t,1,100.0
+1,it isn't true,78,r,r,1,100.0
+1,it isn't true,79,u,u,1,100.0
+1,it isn't true,80,e,e,1,100.0
+1,you're unkind,81,y,y,1,100.0
+1,you're unkind,82,o,o,1,100.0
+1,you're unkind,83,u,u,1,100.0
+1,you're unkind,84,r,r,1,100.0
+1,you're unkind,85,e,s,0,98.823529
+1,you're unkind,86,n,n,1,98.837209
+1,you're unkind,87,i,i,1,98.850575
+1,you're unkind,88,n,n,1,98.863636
+1,you're unkind,89,d,d,1,98.876404
+1,i could help,90,o,o,1,98.888889
+1,i could help,91,u,u,1,98.901099
+1,i could help,92,l,l,1,98.913043
+1,i could help,93,d,d,1,98.924731
+1,i could help,94,h,h,1,98.93617
+1,i could help,95,e,e,1,98.947368
+1,i could help,96,l,l,1,98.958333
+1,i could help,97,p,p,1,98.969072
+1,it's a pipe,98,i,i,1,98.979592
+1,it's a pipe,99,t,t,1,98.989899
+1,it's a pipe,100,s,s,1,99.0
+1,it's a pipe,101,a,a,1,99.009901
+1,it's a pipe,102,p,p,1,99.019608
+1,it's a pipe,103,p,p,1,99.029126
+1,it's a pipe,104,e,e,1,99.038462
+1,who's with me,105,w,w,1,99.047619
+1,who's with me,106,h,h,1,99.056604
+1,who's with me,107,o,o,1,99.065421
+1,who's with me,108,w,w,1,99.074074
+1,who's with me,109,i,i,1,99.082569
+1,who's with me,110,t,t,1,99.090909
+1,who's with me,111,h,h,1,99.099099
+1,who's with me,112,m,m,1,99.107143
+1,who's with me,113,e,e,1,99.115044
+1,i know her,114,i,i,1,99.122807
+1,i know her,115,n,n,1,99.130435
+1,i know her,116,o,o,1,99.137931
+1,i know her,117,w,w,1,99.145299
+1,i know her,118,e,e,1,99.152542
+1,i know her,119,r,r,1,99.159664
+1,have we met,120,a,a,1,99.166667
+1,have we met,121,v,v,1,99.173554
+1,have we met,122,e,e,1,99.180328
+1,have we met,123,w,w,1,99.186992
+1,have we met,124,e,e,1,99.193548
+1,have we met,125,m,m,1,99.2
+1,have we met,126,e,e,1,99.206349
+1,have we met,127,t,t,1,99.212598
+1,stop laughing,128,s,s,1,99.21875
+1,stop laughing,129,t,t,1,99.224806
+1,stop laughing,130,o,o,1,99.230769
+1,stop laughing,131,p,p,1,99.236641
+1,stop laughing,132,l,l,1,99.242424
+1,stop laughing,133,a,a,1,99.24812
+1,stop laughing,134,u,u,1,99.253731
+1,stop laughing,135,g,g,1,99.259259
+1,stop laughing,136,h,h,1,99.264706
+1,stop laughing,137,i,i,1,99.270073
+1,stop laughing,138,n,n,1,99.275362
+1,stop laughing,139,g,g,1,99.280576
+1,i like you,140,i,i,1,99.285714
+1,i like you,141,l,l,1,99.29078
+1,i like you,142,k,k,1,99.295775
+1,i like you,143,e,e,1,99.300699
+1,i like you,144,o,o,1,99.305556
+1,i like you,145,u,u,1,99.310345
+1,tom's scared,146,t,t,1,99.315068
+1,tom's scared,147,o,o,1,99.319728
+1,tom's scared,148,m,m,1,99.324324
+1,tom's scared,149,s,s,1,99.328859
+1,tom's scared,150,c,c,1,99.333333
+1,tom's scared,151,a,a,1,99.337748
+1,tom's scared,152,r,r,1,99.342105
+1,tom's scared,153,e,e,1,99.346405
+1,tom's scared,154,d,d,1,99.350649
+1,i'm a minister,155,i,i,1,99.354839
+1,i'm a minister,156,a,a,1,99.358974
+1,i'm a minister,157,m,m,1,99.363057
+1,i'm a minister,158,n,n,1,99.367089
+1,i'm a minister,159,i,u,0,98.742138
+1,i'm a minister,160,s,s,1,98.75
+1,i'm a minister,161,t,t,1,98.757764
+1,i'm a minister,162,e,e,1,98.765432
+1,there it is,163,t,t,1,98.773006
+1,there it is,164,h,h,1,98.780488
+1,there it is,165,e,e,1,98.787879
+1,there it is,166,r,r,1,98.795181
+1,there it is,167,e,e,1,98.802395
+1,there it is,168,i,i,1,98.809524
+1,there it is,169,t,t,1,98.816568
+1,there it is,170,i,i,1,98.823529
+1,there it is,171,s,s,1,98.830409
+1,i was warned,172,i,i,1,98.837209
+1,i was warned,173,a,a,1,98.843931
+1,i was warned,174,s,s,1,98.850575
+1,i was warned,175,a,a,1,98.857143
+1,i was warned,176,r,r,1,98.863636
+1,i was warned,177,n,n,1,98.870056
+1,i was warned,178,e,e,1,98.876404
+1,i was warned,179,d,d,1,98.882682
+1,are you coming,180,a,a,1,98.888889
+1,are you coming,181,e,e,1,98.895028
+1,are you coming,182,y,y,1,98.901099
+1,are you coming,183,o,o,1,98.907104
+1,are you coming,184,u,u,1,98.913043
+1,are you coming,185,o,o,1,98.918919
+1,are you coming,186,m,m,1,98.924731
+1,are you coming,187,i,i,1,98.930481
+1,are you coming,188,n,n,1,98.93617
+1,are you coming,189,g,g,1,98.941799
+1,cool down,190,c,c,1,98.947368
+1,cool down,191,o,o,1,98.95288
+1,cool down,192,o,o,1,98.958333
+1,cool down,193,l,l,1,98.963731
+1,cool down,194,d,d,1,98.969072
+1,cool down,195,o,o,1,98.974359
+1,cool down,196,w,w,1,98.979592
+1,cool down,197,n,n,1,98.984772
+1,i'm thrilled,198,i,i,1,98.989899
+1,i'm thrilled,199,m,m,1,98.994975
+1,i'm thrilled,200,t,t,1,99.0
+1,i'm thrilled,201,h,h,1,99.004975
+1,i'm thrilled,202,r,e,0,98.514851
+1,i'm thrilled,203,i,i,1,98.522167
+1,i'm thrilled,204,l,l,1,98.529412
+1,i'm thrilled,205,e,e,1,98.536585
+1,i'm thrilled,206,d,d,1,98.543689
+1,i was mistaken,207,i,i,1,98.550725
+1,i was mistaken,208,w,w,1,98.557692
+1,i was mistaken,209,a,a,1,98.564593
+1,i was mistaken,210,s,s,1,98.571429
+1,i was mistaken,211,m,m,1,98.578199
+1,i was mistaken,212,s,s,1,98.584906
+1,i was mistaken,213,t,t,1,98.591549
+1,i was mistaken,214,a,a,1,98.598131
+1,i was mistaken,215,k,k,1,98.604651
+1,i was mistaken,216,e,e,1,98.611111
+1,i was mistaken,217,n,n,1,98.617512
+1,it's bogus,218,i,i,1,98.623853
+1,it's bogus,219,t,t,1,98.630137
+1,it's bogus,220,s,s,1,98.636364
+1,it's bogus,221,o,o,1,98.642534
+1,it's bogus,222,u,u,1,98.648649
+1,it's bogus,223,s,s,1,98.654709
+1,leave tomorrow,224,l,l,1,98.660714
+1,leave tomorrow,225,e,e,1,98.666667
+1,leave tomorrow,226,a,a,1,98.672566
+1,leave tomorrow,227,v,v,1,98.678414
+1,leave tomorrow,228,e,e,1,98.684211
+1,leave tomorrow,229,t,t,1,98.689956
+1,leave tomorrow,230,o,o,1,98.695652
+1,leave tomorrow,231,m,m,1,98.701299
+1,leave tomorrow,232,o,o,1,98.706897
+1,leave tomorrow,233,r,r,1,98.712446
+1,leave tomorrow,234,r,r,1,98.717949
+1,leave tomorrow,235,o,o,1,98.723404
+1,leave tomorrow,236,w,w,1,98.728814
+1,save yourself,237,s,s,1,98.734177
+1,save yourself,238,a,a,1,98.739496
+1,save yourself,239,v,v,1,98.74477
+1,save yourself,240,e,e,1,98.75
+1,save yourself,241,y,y,1,98.755187
+1,save yourself,242,o,o,1,98.760331
+1,save yourself,243,u,u,1,98.765432
+1,save yourself,244,r,r,1,98.770492
+1,save yourself,245,s,s,1,98.77551
+1,save yourself,246,e,e,1,98.780488
+1,save yourself,247,l,l,1,98.785425
+1,save yourself,248,f,f,1,98.790323
+1,you stay here,249,y,y,1,98.795181
+1,you stay here,250,o,o,1,98.8
+1,you stay here,251,u,u,1,98.804781
+1,you stay here,252,t,t,1,98.809524
+1,you stay here,253,a,a,1,98.814229
+1,you stay here,254,h,h,1,98.818898
+1,you stay here,255,e,e,1,98.823529
+1,you stay here,256,r,r,1,98.828125
+1,you stay here,257,e,e,1,98.832685
+1,i went twice,258,i,i,1,98.837209
+1,i went twice,259,w,w,1,98.841699
+1,i went twice,260,e,e,1,98.846154
+1,i went twice,261,n,n,1,98.850575
+1,i went twice,262,t,t,1,98.854962
+1,i went twice,263,t,t,1,98.859316
+1,i went twice,264,i,i,1,98.863636
+1,i went twice,265,c,c,1,98.867925
+1,i went twice,266,e,e,1,98.87218
+1,it's bedtime,267,i,i,1,98.876404
+1,it's bedtime,268,t,t,1,98.880597
+1,it's bedtime,269,s,s,1,98.884758
+1,it's bedtime,270,b,b,1,98.888889
+1,it's bedtime,271,e,e,1,98.892989
+1,it's bedtime,272,d,d,1,98.897059
+1,it's bedtime,273,t,t,1,98.901099
+1,it's bedtime,274,i,i,1,98.905109
+1,it's bedtime,275,m,m,1,98.909091
+1,it's bedtime,276,e,e,1,98.913043
+1,what can i do,277,h,h,1,98.916968
+1,what can i do,278,a,a,1,98.920863
+1,what can i do,279,t,t,1,98.924731
+1,what can i do,280,c,c,1,98.928571
+1,what can i do,281,a,a,1,98.932384
+1,what can i do,282,n,n,1,98.93617
+1,what can i do,283,i,i,1,98.939929
+1,what can i do,284,o,o,1,98.943662
+1,she looks sad,285,s,s,1,98.947368
+1,she looks sad,286,h,h,1,98.951049
+1,she looks sad,287,e,e,1,98.954704
+1,she looks sad,288,l,l,1,98.958333
+1,she looks sad,289,o,o,1,98.961938
+1,she looks sad,290,o,o,1,98.965517
+1,she looks sad,291,k,k,1,98.969072
+1,she looks sad,292,s,s,1,98.972603
+1,she looks sad,293,s,s,1,98.976109
+1,she looks sad,294,a,a,1,98.979592
+1,she looks sad,295,d,d,1,98.983051
+1,open the safe,296,p,p,1,98.986486
+1,open the safe,297,e,e,1,98.989899
+1,open the safe,298,n,n,1,98.993289
+1,open the safe,299,t,t,1,98.996656
+1,open the safe,300,h,h,1,99.0
+1,open the safe,301,e,e,1,99.003322
+1,open the safe,302,a,a,1,99.006623
+1,open the safe,303,f,f,1,99.009901
+1,open the safe,304,e,e,1,99.013158
+1,tom shot mary,305,t,t,1,99.016393
+1,tom shot mary,306,o,o,1,99.019608
+1,tom shot mary,307,m,m,1,99.022801
+1,tom shot mary,308,h,h,1,99.025974
+1,tom shot mary,309,o,o,1,99.029126
+1,tom shot mary,310,t,t,1,99.032258
+1,tom shot mary,311,m,m,1,99.03537
+1,tom shot mary,312,a,a,1,99.038462
+1,tom shot mary,313,r,r,1,99.041534
+1,tom shot mary,314,y,y,1,99.044586
+1,i got nothing,315,i,i,1,99.047619
+1,i got nothing,316,t,t,1,99.050633
+1,i got nothing,317,t,t,1,99.053628
+1,i got nothing,318,h,h,1,99.056604
+1,i got nothing,319,i,i,1,99.059561
+1,i got nothing,320,n,n,1,99.0625
+1,i got nothing,321,g,g,1,99.065421
+1,go see tom,322,o,o,1,99.068323
+1,go see tom,323,s,s,1,99.071207
+1,go see tom,324,e,e,1,99.074074
+1,go see tom,325,e,e,1,99.076923
+1,go see tom,326,o,o,1,99.079755
+1,go see tom,327,m,m,1,99.082569
+1,i was hurt,328,i,i,1,99.085366
+1,i was hurt,329,w,w,1,99.088146
+1,i was hurt,330,a,a,1,99.090909
+1,i was hurt,331,s,s,1,99.093656
+1,i was hurt,332,u,u,1,99.096386
+1,i was hurt,333,r,r,1,99.099099
+1,i was hurt,334,t,t,1,99.101796
+1,you're grumpy,335,y,y,1,99.104478
+1,you're grumpy,336,o,o,1,99.107143
+1,you're grumpy,337,u,u,1,99.109792
+1,you're grumpy,338,r,r,1,99.112426
+1,you're grumpy,339,r,r,1,99.115044
+1,you're grumpy,340,m,m,1,99.117647
+1,you're grumpy,341,p,p,1,99.120235
+1,you're grumpy,342,y,y,1,99.122807
+1,i saw nothing,343,i,i,1,99.125364
+1,i saw nothing,344,s,s,1,99.127907
+1,i saw nothing,345,a,a,1,99.130435
+1,i saw nothing,346,w,w,1,99.132948
+1,i saw nothing,347,o,o,1,99.135447
+1,i saw nothing,348,t,t,1,99.137931
+1,i saw nothing,349,h,h,1,99.140401
+1,i saw nothing,350,i,i,1,99.142857
+1,i saw nothing,351,n,n,1,99.145299
+1,i saw nothing,352,g,g,1,99.147727
+1,i have proof,353,i,i,1,99.150142
+1,i have proof,354,h,h,1,99.152542
+1,i have proof,355,a,a,1,99.15493
+1,i have proof,356,v,v,1,99.157303
+1,i have proof,357,e,e,1,99.159664
+1,i have proof,358,p,p,1,99.162011
+1,i have proof,359,r,r,1,99.164345
+1,i have proof,360,o,o,1,99.166667
+1,i have proof,361,o,o,1,99.168975
+1,i have proof,362,f,f,1,99.171271
+1,he is lazy,363,h,h,1,99.173554
+1,he is lazy,364,e,e,1,99.175824
+1,he is lazy,365,i,i,1,99.178082
+1,he is lazy,366,s,s,1,99.180328
+1,he is lazy,367,a,a,1,99.182561
+1,he is lazy,368,y,y,1,99.184783
+1,i felt guilty,369,i,i,1,99.186992
+1,i felt guilty,370,l,l,1,99.189189
+1,i felt guilty,371,t,t,1,99.191375
+1,i felt guilty,372,i,i,1,99.193548
+1,i felt guilty,373,l,l,1,99.19571
+1,i felt guilty,374,t,t,1,99.197861
+1,i felt guilty,375,y,y,1,99.2
+1,i eat beans,376,i,i,1,99.202128
+1,i eat beans,377,a,a,1,99.204244
+1,i eat beans,378,t,t,1,99.206349
+1,i eat beans,379,b,b,1,99.208443
+1,i eat beans,380,e,e,1,99.210526
+1,i eat beans,381,a,a,1,99.212598
+1,i eat beans,382,n,n,1,99.21466
+1,i eat beans,383,s,s,1,99.21671
+1,i'll take tom,384,i,i,1,99.21875
+1,i'll take tom,385,l,l,1,99.220779
+1,i'll take tom,386,l,l,1,99.222798
+1,i'll take tom,387,t,t,1,99.224806
+1,i'll take tom,388,a,a,1,99.226804
+1,i'll take tom,389,k,k,1,99.228792
+1,i'll take tom,390,e,e,1,99.230769
+1,i'll take tom,391,o,o,1,99.232737
+1,i'll take tom,392,m,m,1,99.234694
+1,he is well off,393,e,e,1,99.236641
+1,he is well off,394,i,i,1,99.238579
+1,he is well off,395,s,s,1,99.240506
+1,he is well off,396,w,w,1,99.242424
+1,he is well off,397,e,e,1,99.244332
+1,he is well off,398,l,l,1,99.246231
+1,he is well off,399,l,l,1,99.24812
+1,he is well off,400,o,o,1,99.25
+1,he is well off,401,f,f,1,99.25187
+1,he is well off,402,f,f,1,99.253731
+1,can you read,403,a,a,1,99.255583
+1,can you read,404,n,n,1,99.257426
+1,can you read,405,y,y,1,99.259259
+1,can you read,406,o,o,1,99.261084
+1,can you read,407,u,u,1,99.262899
+1,can you read,408,e,e,1,99.264706
+1,can you read,409,a,a,1,99.266504
+1,can you read,410,d,d,1,99.268293
+1,head north,411,h,h,1,99.270073
+1,head north,412,e,e,1,99.271845
+1,head north,413,a,a,1,99.273608
+1,head north,414,d,d,1,99.275362
+1,head north,415,o,o,1,99.277108
+1,head north,416,r,t,0,99.038462
+1,he's broke,417,h,h,1,99.040767
+1,he's broke,418,e,e,1,99.043062
+1,he's broke,419,o,o,1,99.045346
+1,he's broke,420,k,k,1,99.047619
+1,he's broke,421,e,e,1,99.049881
+1,i'm broke,422,i,i,1,99.052133
+1,i'm broke,423,m,m,1,99.054374
+1,i'm broke,424,r,r,1,99.056604
+1,i'm broke,425,o,o,1,99.058824
+1,i'm broke,426,k,k,1,99.061033
+1,i'm broke,427,e,e,1,99.063232
+1,i'm a bit shy,428,i,i,1,99.065421
+1,i'm a bit shy,429,m,m,1,99.067599
+1,i'm a bit shy,430,a,a,1,99.069767
+1,i'm a bit shy,431,b,b,1,99.071926
+1,i'm a bit shy,432,t,t,1,99.074074
+1,i'm a bit shy,433,s,s,1,99.076212
+1,i'm a bit shy,434,h,h,1,99.078341
+1,i'm a bit shy,435,y,y,1,99.08046
+1,tom joined us,436,t,t,1,99.082569
+1,tom joined us,437,o,o,1,99.084668
+1,tom joined us,438,m,m,1,99.086758
+1,tom joined us,439,o,o,1,99.088838
+1,tom joined us,440,n,n,1,99.090909
+1,tom joined us,441,e,e,1,99.092971
+1,tom joined us,442,d,d,1,99.095023
+1,tom joined us,443,s,s,1,99.097065
+1,we made it,444,w,w,1,99.099099
+1,we made it,445,e,e,1,99.101124
+1,we made it,446,m,m,1,99.103139
+1,we made it,447,a,a,1,99.105145
+1,we made it,448,d,d,1,99.107143
+1,we made it,449,e,e,1,99.109131
+1,we made it,450,i,i,1,99.111111
+1,that was me,451,t,t,1,99.113082
+1,that was me,452,h,h,1,99.115044
+1,that was me,453,a,a,1,99.116998
+1,that was me,454,t,t,1,99.118943
+1,that was me,455,w,w,1,99.120879
+1,that was me,456,a,a,1,99.122807
+1,that was me,457,s,s,1,99.124726
+1,that was me,458,m,m,1,99.126638
+1,that was me,459,e,e,1,99.12854
+1,tom will talk,460,t,t,1,99.130435
+1,tom will talk,461,o,o,1,99.132321
+1,tom will talk,462,m,m,1,99.134199
+1,tom will talk,463,w,w,1,99.136069
+1,tom will talk,464,l,l,1,99.137931
+1,tom will talk,465,l,l,1,99.139785
+1,tom will talk,466,t,t,1,99.141631
+1,tom will talk,467,l,l,1,99.143469
+1,tom will talk,468,k,k,1,99.145299
+1,he hugged her,469,e,e,1,99.147122
+1,he hugged her,470,u,i,0,98.93617
+1,he hugged her,471,g,g,1,98.938429
+1,he hugged her,472,g,h,0,98.728814
+1,he hugged her,473,e,e,1,98.731501
+1,he hugged her,474,h,h,1,98.734177
+1,he hugged her,475,e,e,1,98.736842
+1,he hugged her,476,r,r,1,98.739496
+1,let's watch tv,477,l,l,1,98.742138
+1,let's watch tv,478,e,e,1,98.74477
+1,let's watch tv,479,t,t,1,98.74739
+1,let's watch tv,480,s,s,1,98.75
+1,let's watch tv,481,w,w,1,98.752599
+1,let's watch tv,482,a,a,1,98.755187
+1,let's watch tv,483,t,t,1,98.757764
+1,let's watch tv,484,c,c,1,98.760331
+1,let's watch tv,485,h,h,1,98.762887
+1,let's watch tv,486,t,t,1,98.765432
+1,i want a pony,487,i,i,1,98.767967
+1,i want a pony,488,w,w,1,98.770492
+1,i want a pony,489,a,a,1,98.773006
+1,i want a pony,490,n,n,1,98.77551
+1,i want a pony,491,t,t,1,98.778004
+1,i want a pony,492,p,p,1,98.780488
+1,i want a pony,493,o,o,1,98.782961
+1,i want a pony,494,n,n,1,98.785425
+1,i want a pony,495,y,y,1,98.787879
+1,tom listened,496,o,o,1,98.790323
+1,tom listened,497,m,m,1,98.792757
+1,tom listened,498,i,i,1,98.795181
+1,tom listened,499,s,s,1,98.797595
+1,tom listened,500,t,t,1,98.8
+1,tom listened,501,e,e,1,98.802395
+1,tom listened,502,n,n,1,98.804781
+1,tom listened,503,e,e,1,98.807157
+1,tom listened,504,d,d,1,98.809524
+1,just go away,505,u,u,1,98.811881
+1,just go away,506,s,s,1,98.814229
+1,just go away,507,t,t,1,98.816568
+1,just go away,508,o,o,1,98.818898
+1,just go away,509,a,a,1,98.821218
+1,just go away,510,a,a,1,98.823529
+1,just go away,511,y,y,1,98.825832

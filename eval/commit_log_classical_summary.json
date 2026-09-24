@@ -1,0 +1,113 @@
+{
+  "model": "classical",
+  "selection_rule": "log-linear fusion",
+  "phase_scale": 0.0,
+  "amplify_cap": 0,
+  "theta": 0.8,
+  "lm_beta": 0.7,
+  "lm_floor": 0.0001,
+  "n_hypotheses": 32,
+  "sentences": 60,
+  "sentence_split": {
+    "n": 60,
+    "seed": 4,
+    "skip": 2060
+  },
+  "sigmas_px": [
+    30.0,
+    40.0,
+    50.0,
+    60.0,
+    75.0
+  ],
+  "repeats": 1,
+  "base_noise_seed": 7,
+  "trials": [
+    {
+      "trial": 1,
+      "sigma_px": 30.0,
+      "repeat": 0,
+      "noise_seed": 7,
+      "final_commit_accuracy_pct": 98.82583170254404,
+      "total_committed": 511,
+      "correct": 505,
+      "incorrect": 6,
+      "keystrokes_presented": 599,
+      "prompts": 88,
+      "prompt_rate": 0.14691151919866444,
+      "seconds": 0.32
+    },
+    {
+      "trial": 2,
+      "sigma_px": 40.0,
+      "repeat": 0,
+      "noise_seed": 7,
+      "final_commit_accuracy_pct": 97.87735849056604,
+      "total_committed": 424,
+      "correct": 415,
+      "incorrect": 9,
+      "keystrokes_presented": 599,
+      "prompts": 175,
+      "prompt_rate": 0.2921535893155259,
+      "seconds": 0.27
+    },
+    {
+      "trial": 3,
+      "sigma_px": 50.0,
+      "repeat": 0,
+      "noise_seed": 7,
+      "final_commit_accuracy_pct": 97.74647887323944,
+      "total_committed": 355,
+      "correct": 347,
+      "incorrect": 8,
+      "keystrokes_presented": 599,
+      "prompts": 244,
+      "prompt_rate": 0.4073455759599332,
+      "seconds": 0.25
+    },
+    {
+      "trial": 4,
+      "sigma_px": 60.0,
+      "repeat": 0,
+      "noise_seed": 7,
+      "final_commit_accuracy_pct": 95.40983606557377,
+      "total_committed": 305,
+      "correct": 291,
+      "incorrect": 14,
+      "keystrokes_presented": 599,
+      "prompts": 294,
+      "prompt_rate": 0.49081803005008345,
+      "seconds": 0.23
+    },
+    {
+      "trial": 5,
+      "sigma_px": 75.0,
+      "repeat": 0,
+      "noise_seed": 7,
+      "final_commit_accuracy_pct": 96.5909090909091,
+      "total_committed": 264,
+      "correct": 255,
+      "incorrect": 9,
+      "keystrokes_presented": 599,
+      "prompts": 335,
+      "prompt_rate": 0.5592654424040067,
+      "seconds": 0.23
+    }
+  ],
+  "pooled": {
+    "total_committed": 1859,
+    "correct": 1813,
+    "incorrect": 46,
+    "commit_accuracy_pct": 97.52555137170522
+  },
+  "csv": "commit_log_classical.csv",
+  "csv_columns": [
+    "trial",
+    "sentence",
+    "keystroke_index",
+    "ground_truth",
+    "prediction",
+    "correct",
+    "cumulative_accuracy"
+  ]
+}

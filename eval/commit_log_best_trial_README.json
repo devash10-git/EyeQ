@@ -1,0 +1,47 @@
+{
+  "WARNING": "SELECTED SUBSET - NOT THE MODEL'S ACCURACY. These files contain only the single highest-scoring trial out of 5. Reporting the best of N runs as the result overstates performance. The honest figure is pooled_all_trials_pct, from commit_log_{model}.csv.",
+  "source": "eval/commit_log_{model}.csv (offline protocol, eval/commit_accuracy_log.py)",
+  "selection_rule": "trial with the highest commit accuracy",
+  "trial_to_condition": {
+    "1": "sigma=30px",
+    "2": "sigma=40px",
+    "3": "sigma=50px",
+    "4": "sigma=60px",
+    "5": "sigma=75px"
+  },
+  "note_on_conditions": "Trials are NOISE LEVELS, not repeats. The best trial is simply the lowest-noise condition (sigma=30px); it is the easiest setting, not a better model.",
+  "models": {
+    "quantum": {
+      "selected_trial": 1,
+      "accuracy_pct": 98.81889763779527,
+      "committed": 508,
+      "correct": 502,
+      "incorrect": 6,
+      "file": "commit_log_best_trial_quantum.csv",
+      "all_trials_pct": {
+        "1": 98.81889763779527,
+        "2": 97.85202863961814,
+        "3": 97.38372093023256,
+        "4": 96.03960396039604,
+        "5": 96.52509652509653
+      },
+      "pooled_all_trials_pct": 97.54500818330605
+    },
+    "classical": {
+      "selected_trial": 1,
+      "accuracy_pct": 98.82583170254404,
+      "committed": 511,
+      "correct": 505,
+      "incorrect": 6,
+      "file": "commit_log_best_trial_classical.csv",
+      "all_trials_pct": {
+        "1": 98.82583170254404,
+        "2": 97.87735849056604,
+        "3": 97.74647887323944,
+        "4": 95.40983606557377,
+        "5": 96.5909090909091
+      },
+      "pooled_all_trials_pct": 97.52555137170522
+    }
+  }
+}

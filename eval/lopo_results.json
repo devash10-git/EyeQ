@@ -1,0 +1,79 @@
+{
+  "folds": [
+    {
+      "held_out": "P01",
+      "picked": "HuberRegressor",
+      "inner": 3.821995827000522,
+      "outer": 3.619757135024518,
+      "incumbent": 3.4774799836822416,
+      "gain": -4.091386636584511
+    },
+    {
+      "held_out": "P02",
+      "picked": "HuberRegressor",
+      "inner": 3.7660502198375445,
+      "outer": 3.3960867260267644,
+      "incumbent": 3.828006728482027,
+      "gain": 11.28315682523729
+    },
+    {
+      "held_out": "P03",
+      "picked": "HuberRegressor",
+      "inner": 3.773285291484492,
+      "outer": 3.6655707902074166,
+      "incumbent": 3.6119448742362628,
+      "gain": -1.4846825695946682
+    },
+    {
+      "held_out": "P04",
+      "picked": "HuberRegressor",
+      "inner": 3.833279231046435,
+      "outer": 2.976885619547137,
+      "incumbent": 3.3012012591207385,
+      "gain": 9.824170479687194
+    },
+    {
+      "held_out": "P05",
+      "picked": "HuberRegressor",
+      "inner": 3.8661261486011913,
+      "outer": 3.230020389540126,
+      "incumbent": 3.3699521247384174,
+      "gain": 4.15233599821995
+    },
+    {
+      "held_out": "P06",
+      "picked": "KernelRidge RBF",
+      "inner": 3.8623177880844617,
+      "outer": 3.574227721153995,
+      "incumbent": 3.630505110823473,
+      "gain": 1.5501256147994593
+    },
+    {
+      "held_out": "P07",
+      "picked": "KernelRidge RBF",
+      "inner": 3.6877377462496463,
+      "outer": 6.3276259630944605,
+      "incumbent": 4.577613137585308,
+      "gain": -38.22981044729098
+    },
+    {
+      "held_out": "P08",
+      "picked": "HuberRegressor",
+      "inner": 3.748459176548215,
+      "outer": 3.6491905762003296,
+      "incumbent": 4.372218921780644,
+      "gain": 16.536874262596427
+    },
+    {
+      "held_out": "P09",
+      "picked": "HuberRegressor",
+      "inner": 3.7701246876152696,
+      "outer": 3.328595337998907,
+      "incumbent": 3.685079911984085,
+      "gain": 9.673727096822795
+    }
+  ],
+  "mean_gain_pct": 1.023834513765884,
+  "n_participants": 9,
+  "n_sessions": 11
+}

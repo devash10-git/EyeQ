@@ -331,6 +331,40 @@ function smartCommit(domKey, at) {
   lastFused = fused.map(c => ({ key: c.letter || "space", p: +c.p.toFixed(4) }));
 
   const top = fused[0];
+
+  /* Transcription test-session hook (eval/live_eval.py). Inert unless a
+   * session is running, and the two session modes differ in a way that
+   * matters:
+   *
+   *   rule=classical  passive. The decision above is already made; the hook
+   *                   only reports it and returns false, so the keystroke is
+   *                   exactly the one this file would have produced anyway.
+   *
+   *   rule=quantum    the hook takes over. The quantum conditional selection
+   *                   rule is not implemented in this file — it lives in
+   *                   quantum/conditional_selection.py — so the only way it
+   *                   can drive a real keystroke is to be asked for one. The
+   *                   hook returns true, awaits the server, and calls
+   *                   applyDecision() itself.
+   *
+   * A throwing or absent session must never cost a keystroke, hence the guard
+   * and the try/catch. */
+  const sess = window.__evalSession;
+  if (sess && sess.active) {
+    try {
+      if (sess.onDecision({ cands, prefix, fused, top,
+                            apply: (t) => applyDecision(t, fused) })) return;
+    } catch (e) {
+      console.warn("[eval] session hook failed, typing normally", e);
+    }
+  }
+
+  applyDecision(top, fused);
+}
+
+/* The commit tail of smartCommit, split out so a test session can supply the
+ * decision without duplicating what happens once one is made. */
+function applyDecision(top, fused) {
   if (top.p >= THETA) {
     top.el.classList.add("flash");
     setTimeout(() => top.el.classList.remove("flash"), 200);
@@ -1003,6 +1037,7 @@ window.__gaze = {
   },
   startGaze,
   getTracker: () => tracker,
+  applyDecision,
 };
 
 renderLabel(); // paint the initial placeholder
